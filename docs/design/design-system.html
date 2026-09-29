@@ -7,374 +7,204 @@
 </head>
 <body>
 <x-dc>
-<helmet data-dc-atomics><meta name="design_doc_mode" content="canvas">
+<helmet><meta name="design_doc_mode" content="canvas">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.min.css">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
-body{margin:0;background:#eeece7;font-family:Pretendard,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
-a{color:#4a6b52;text-decoration:none}a:hover{color:#3a5641}
+body{margin:0;background:#121211;font-family:Pretendard,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:#d4f53c;text-decoration:none}a:hover{color:#faf9f7}
 </style></helmet>
 
-<div style="--accent:{{ accent }};max-width:1180px;margin:0 auto;padding:56px 48px 96px;display:flex;flex-direction:column;gap:14px">
+<div style="max-width:1180px;margin:0 auto;padding:60px 48px 100px;display:flex;flex-direction:column;gap:56px">
 
-<header style="display:flex;flex-direction:column;gap:14px;padding-bottom:34px;border-bottom:1px solid rgba(0,0,0,.1)">
-<div style="font:500 11px/1 'IBM Plex Mono',monospace;letter-spacing:.08em;color:#9d9c96">우맛공 · design system v1 · 인덱스 아카이브 방향(2c)</div>
-<div style="font:600 46px/1.08 Pretendard,sans-serif;letter-spacing:-.04em;color:#22221f">채워지는 색인</div>
-<div style="max-width:660px;font:400 14.5px/1.75 Pretendard,sans-serif;color:#6d6b64">스티커 앨범을 종이 흉내가 아니라 <b style="font-weight:500;color:#22221f">색인</b>으로 번역합니다. 이어지는 일련번호, 지역별 진행률, 목록 끝의 빈 줄 하나가 수집 욕구를 만듭니다. 사진은 색인 썸네일로 줄이고, 크게 보는 일은 상세 화면이 맡습니다. 아래 값은 그대로 구현에 넘길 수 있는 토큰과 컴포넌트 규격입니다. 390px 기준.</div>
+<header style="display:flex;flex-direction:column;gap:18px">
+<div style="display:flex;align-items:center;gap:10px"><div style="padding:6px 11px;border-radius:999px;background:#d4f53c;font:700 12px/1 Pretendard,sans-serif;color:#1d1d1b;white-space:nowrap">v2</div><div style="font:500 12.5px/1 Pretendard,sans-serif;color:rgba(250,249,247,.5);white-space:nowrap">우맛공 디자인 시스템 · 로그인 화면 기준으로 재정의</div></div>
+<div style="font:800 64px/1.02 Pretendard,sans-serif;letter-spacing:-.05em;color:#faf9f7"><span style="color:#d4f53c">우</span>리끼리<br><span style="color:#d4f53c">맛</span>집 <span style="color:#d4f53c">공</span>유</div>
+<div style="max-width:640px;font:400 15px/1.75 Pretendard,sans-serif;color:rgba(250,249,247,.62)">어두운 바탕 위에 음식 사진이 가장 밝게 뜨고, 친구가 남긴 기록은 <b style="font-weight:700;color:#faf9f7">크림색 스티커 카드</b>처럼 붙습니다. 유채색은 라임 하나 — “또 갈래”와 주요 행동에만. 글자는 굵고 크게, UI는 조용하게.</div>
 </header>
 
-<section style="padding:36px 0 0;display:flex;flex-direction:column;gap:18px">
-<div style="font:500 11px/1 'IBM Plex Mono',monospace;letter-spacing:.08em;color:#9d9c96">01 — 원칙</div>
-<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
-<div style="background:#fff;border:1px solid rgba(0,0,0,.07);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:8px">
-<div style="font:400 13px/1 'IBM Plex Mono',monospace;color:var(--accent,#4a6b52)">01</div>
-<div style="font:500 14px/1.4 Pretendard,sans-serif;letter-spacing:-.02em;color:#22221f">번호는 끊기지 않는다</div>
-<div style="font:400 12.5px/1.6 Pretendard,sans-serif;color:#6d6b64">모든 기록에 일련번호(012)를 붙입니다. 삭제해도 번호는 재사용하지 않습니다 — 목록이 대장처럼 자랍니다.</div>
-</div>
-<div style="background:#fff;border:1px solid rgba(0,0,0,.07);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:8px">
-<div style="font:400 13px/1 'IBM Plex Mono',monospace;color:var(--accent,#4a6b52)">02</div>
-<div style="font:500 14px/1.4 Pretendard,sans-serif;letter-spacing:-.02em;color:#22221f">빈 칸을 숨기지 않는다</div>
-<div style="font:400 12.5px/1.6 Pretendard,sans-serif;color:#6d6b64">목록 끝, 지도 위, 지역 카드에 항상 “아직 비어 있는 것”을 한 개만 보여줍니다. 두 개 이상은 압박이 됩니다.</div>
-</div>
-<div style="background:#fff;border:1px solid rgba(0,0,0,.07);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:8px">
-<div style="font:400 13px/1 'IBM Plex Mono',monospace;color:var(--accent,#4a6b52)">03</div>
-<div style="font:500 14px/1.4 Pretendard,sans-serif;letter-spacing:-.02em;color:#22221f">딥그린은 “검증됨”만</div>
-<div style="font:400 12.5px/1.6 Pretendard,sans-serif;color:#6d6b64">유채색은 한 가지, 뜻도 한 가지. 진행률·검증 표시·완료에만 쓰고 버튼 색으로 남용하지 않습니다.</div>
-</div>
-<div style="background:#fff;border:1px solid rgba(0,0,0,.07);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:8px">
-<div style="font:400 13px/1 'IBM Plex Mono',monospace;color:var(--accent,#4a6b52)">04</div>
-<div style="font:500 14px/1.4 Pretendard,sans-serif;letter-spacing:-.02em;color:#22221f">목록은 밀도, 상세는 사진</div>
-<div style="font:400 12.5px/1.6 Pretendard,sans-serif;color:#6d6b64">목록에서 사진 위에 글자를 얹지 않습니다. 큰 사진과 오버레이는 상세·앨범 화면 전용.</div>
-</div>
+<section style="display:flex;flex-direction:column;gap:18px">
+<div style="font:700 13px/1 Pretendard,sans-serif;color:#d4f53c;white-space:nowrap">01 원칙</div>
+<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px">
+<div style="background:#1d1d1b;border:1px solid rgba(250,249,247,.08);border-radius:20px;padding:22px;display:flex;flex-direction:column;gap:10px"><div style="font:800 28px/1 Pretendard,sans-serif;color:#d4f53c">01</div><div style="font:700 16px/1.35 Pretendard,sans-serif;letter-spacing:-.03em;color:#faf9f7">어둠은 사진을 위한 것</div><div style="font:400 13px/1.65 Pretendard,sans-serif;color:rgba(250,249,247,.55)">바탕은 잉크색. 음식 사진의 채도가 그대로 살아나고, 밤에 여는 지도에서도 눈이 편합니다.</div></div>
+<div style="background:#1d1d1b;border:1px solid rgba(250,249,247,.08);border-radius:20px;padding:22px;display:flex;flex-direction:column;gap:10px"><div style="font:800 28px/1 Pretendard,sans-serif;color:#d4f53c">02</div><div style="font:700 16px/1.35 Pretendard,sans-serif;letter-spacing:-.03em;color:#faf9f7">라임은 “또 갈래”</div><div style="font:400 13px/1.65 Pretendard,sans-serif;color:rgba(250,249,247,.55)">라임이 보이면 친구가 검증한 곳이거나 지금 누를 버튼. 다른 뜻으로 쓰지 않습니다.</div></div>
+<div style="background:#1d1d1b;border:1px solid rgba(250,249,247,.08);border-radius:20px;padding:22px;display:flex;flex-direction:column;gap:10px"><div style="font:800 28px/1 Pretendard,sans-serif;color:#d4f53c">03</div><div style="font:700 16px/1.35 Pretendard,sans-serif;letter-spacing:-.03em;color:#faf9f7">기록은 스티커처럼</div><div style="font:400 13px/1.65 Pretendard,sans-serif;color:rgba(250,249,247,.55)">사진 카드와 라벨은 살짝 기울여 붙입니다. 수집물의 손맛은 질감이 아니라 각도에서.</div></div>
+<div style="background:#1d1d1b;border:1px solid rgba(250,249,247,.08);border-radius:20px;padding:22px;display:flex;flex-direction:column;gap:10px"><div style="font:800 28px/1 Pretendard,sans-serif;color:#d4f53c">04</div><div style="font:700 16px/1.35 Pretendard,sans-serif;letter-spacing:-.03em;color:#faf9f7">숫자는 크게 자랑</div><div style="font:400 13px/1.65 Pretendard,sans-serif;color:rgba(250,249,247,.55)">모은 곳, 검증 인원, 방문 횟수는 800 굵기 큰 숫자로. 배지·트로피 없이 숫자 자체가 보상.</div></div>
 </div>
 </section>
 
-<section style="padding:44px 0 0;display:flex;flex-direction:column;gap:18px;border-top:1px solid rgba(0,0,0,.1);margin-top:26px">
-<div style="display:flex;align-items:baseline;gap:12px">
-<div style="font:500 11px/1 'IBM Plex Mono',monospace;letter-spacing:.08em;color:#9d9c96">02 — 색</div>
-<div style="font:400 12.5px/1 Pretendard,sans-serif;color:#9d9c96">뉴트럴 8단 + 딥그린 1색. 밝은 베이스맵 위에서도 대비가 유지되도록 명도 간격을 넓게.</div>
+<section style="display:flex;flex-direction:column;gap:18px">
+<div style="font:700 13px/1 Pretendard,sans-serif;color:#d4f53c;white-space:nowrap">02 색</div>
+<div style="background:#1d1d1b;border:1px solid rgba(250,249,247,.08);border-radius:22px;padding:26px;display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<div style="font:700 13px/1 Pretendard,sans-serif;color:#faf9f7">표면 — 잉크 5단</div>
+<div style="display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px">
+<div style="display:flex;flex-direction:column;gap:8px"><div style="height:72px;border-radius:14px;background:#121211;border:1px solid rgba(250,249,247,.1)"></div><div style="font:500 11.5px/1.5 Pretendard,sans-serif;color:rgba(250,249,247,.55)">bg-deep<br>#121211</div></div>
+<div style="display:flex;flex-direction:column;gap:8px"><div style="height:72px;border-radius:14px;background:#1d1d1b;border:1px solid rgba(250,249,247,.1)"></div><div style="font:500 11.5px/1.5 Pretendard,sans-serif;color:rgba(250,249,247,.55)">bg · 화면<br>#1d1d1b</div></div>
+<div style="display:flex;flex-direction:column;gap:8px"><div style="height:72px;border-radius:14px;background:#262624"></div><div style="font:500 11.5px/1.5 Pretendard,sans-serif;color:rgba(250,249,247,.55)">surface · 시트<br>#262624</div></div>
+<div style="display:flex;flex-direction:column;gap:8px"><div style="height:72px;border-radius:14px;background:#31302d"></div><div style="font:500 11.5px/1.5 Pretendard,sans-serif;color:rgba(250,249,247,.55)">raised · 칩<br>#31302d</div></div>
+<div style="display:flex;flex-direction:column;gap:8px"><div style="height:72px;border-radius:14px;background:#faf9f7"></div><div style="font:500 11.5px/1.5 Pretendard,sans-serif;color:rgba(250,249,247,.55)">cream · 스티커 카드<br>#faf9f7</div></div>
+<div style="display:flex;flex-direction:column;gap:8px"><div style="height:72px;border-radius:14px;background:#d4f53c"></div><div style="font:500 11.5px/1.5 Pretendard,sans-serif;color:rgba(250,249,247,.55)">lime · 또 갈래<br>#d4f53c</div></div>
 </div>
-<div style="background:#fff;border:1px solid rgba(0,0,0,.07);border-radius:12px;padding:22px;display:flex;flex-direction:column;gap:26px">
-
-<div style="display:flex;flex-direction:column;gap:10px">
-<div style="font:500 12px/1 Pretendard,sans-serif;color:#3f3e3a">뉴트럴</div>
-<div style="display:grid;grid-template-columns:repeat(8,1fr);gap:8px">
-<div style="display:flex;flex-direction:column;gap:6px"><div style="height:64px;border-radius:8px;background:#faf9f7;border:1px solid rgba(0,0,0,.08)"></div><div style="font:400 10px/1.5 'IBM Plex Mono',monospace;color:#6d6b64">page<br>faf9f7</div></div>
-<div style="display:flex;flex-direction:column;gap:6px"><div style="height:64px;border-radius:8px;background:#fff;border:1px solid rgba(0,0,0,.08)"></div><div style="font:400 10px/1.5 'IBM Plex Mono',monospace;color:#6d6b64">surface<br>ffffff</div></div>
-<div style="display:flex;flex-direction:column;gap:6px"><div style="height:64px;border-radius:8px;background:#f3f1ec"></div><div style="font:400 10px/1.5 'IBM Plex Mono',monospace;color:#6d6b64">n-100<br>f3f1ec</div></div>
-<div style="display:flex;flex-direction:column;gap:6px"><div style="height:64px;border-radius:8px;background:#eeece7"></div><div style="font:400 10px/1.5 'IBM Plex Mono',monospace;color:#6d6b64">n-200<br>eeece7</div></div>
-<div style="display:flex;flex-direction:column;gap:6px"><div style="height:64px;border-radius:8px;background:#cfcdc5"></div><div style="font:400 10px/1.5 'IBM Plex Mono',monospace;color:#6d6b64">n-300<br>cfcdc5</div></div>
-<div style="display:flex;flex-direction:column;gap:6px"><div style="height:64px;border-radius:8px;background:#9d9c96"></div><div style="font:400 10px/1.5 'IBM Plex Mono',monospace;color:#6d6b64">n-400<br>9d9c96</div></div>
-<div style="display:flex;flex-direction:column;gap:6px"><div style="height:64px;border-radius:8px;background:#6d6b64"></div><div style="font:400 10px/1.5 'IBM Plex Mono',monospace;color:#6d6b64">n-500<br>6d6b64</div></div>
-<div style="display:flex;flex-direction:column;gap:6px"><div style="height:64px;border-radius:8px;background:#22221f"></div><div style="font:400 10px/1.5 'IBM Plex Mono',monospace;color:#6d6b64">ink<br>22221f</div></div>
+<div style="font:400 12.5px/1.6 Pretendard,sans-serif;color:rgba(250,249,247,.45)">글자: 기본 #faf9f7 · 보조 62% · 비활성 42% · 구분선 8% · 라임 위 글자는 항상 #1d1d1b</div>
 </div>
-<div style="font:400 11.5px/1.6 Pretendard,sans-serif;color:#9d9c96">본문 #3f3e3a · 보조 #6d6b64 · 비활성 #9d9c96 · 구분선 rgba(0,0,0,.055) · 사진 자리 #e9e6e1 · 점선 #d5d2ca</div>
+<div style="display:flex;gap:28px;flex-wrap:wrap">
+<div style="flex:1;min-width:300px;display:flex;flex-direction:column;gap:12px">
+<div style="font:700 13px/1 Pretendard,sans-serif;color:#faf9f7">클럽 색 — 어두운 지도용 4색</div>
+<div style="display:flex;gap:10px">
+<div style="flex:1;display:flex;flex-direction:column;gap:7px"><div style="height:44px;border-radius:12px;background:#8fb098"></div><div style="font:500 11px/1 Pretendard,sans-serif;color:rgba(250,249,247,.5)">세이지 #8fb098</div></div>
+<div style="flex:1;display:flex;flex-direction:column;gap:7px"><div style="height:44px;border-radius:12px;background:#8fb3c9"></div><div style="font:500 11px/1 Pretendard,sans-serif;color:rgba(250,249,247,.5)">스카이 #8fb3c9</div></div>
+<div style="flex:1;display:flex;flex-direction:column;gap:7px"><div style="height:44px;border-radius:12px;background:#d1b98a"></div><div style="font:500 11px/1 Pretendard,sans-serif;color:rgba(250,249,247,.5)">샌드 #d1b98a</div></div>
+<div style="flex:1;display:flex;flex-direction:column;gap:7px"><div style="height:44px;border-radius:12px;background:#b3a3d1"></div><div style="font:500 11px/1 Pretendard,sans-serif;color:rgba(250,249,247,.5)">라일락 #b3a3d1</div></div>
 </div>
-
-<div style="display:flex;gap:26px;flex-wrap:wrap">
-<div style="flex:1;min-width:300px;display:flex;flex-direction:column;gap:10px">
-<div style="font:500 12px/1 Pretendard,sans-serif;color:#3f3e3a">강조 — 검증 / 진행</div>
-<div style="display:flex;gap:8px">
-<div style="flex:2;height:64px;border-radius:8px;background:var(--accent,#4a6b52);display:flex;align-items:flex-end;padding:8px;font:400 10px/1 'IBM Plex Mono',monospace;color:rgba(255,255,255,.85)">accent</div>
-<div style="flex:1;height:64px;border-radius:8px;background:#3a5641"></div>
-<div style="flex:1;height:64px;border-radius:8px;background:#e9efe9"></div>
+<div style="font:400 12.5px/1.6 Pretendard,sans-serif;color:rgba(250,249,247,.45)">라임과 겹치지 않게 전부 저채도. 빨강 계열 제외.</div>
 </div>
-<div style="font:400 11.5px/1.6 Pretendard,sans-serif;color:#9d9c96">accent · press(#3a5641) · tint(#e9efe9). 한 화면 안에서 딥그린 면적은 5% 이하로.</div>
+<div style="flex:1;min-width:300px;display:flex;flex-direction:column;gap:12px">
+<div style="font:700 13px/1 Pretendard,sans-serif;color:#faf9f7">예외 — 외부 브랜드</div>
+<div style="display:flex;gap:10px;align-items:center">
+<div style="height:44px;flex:1;border-radius:12px;background:#fee500;display:flex;align-items:center;justify-content:center;font:600 13px/1 Pretendard,sans-serif;color:rgba(0,0,0,.85)">카카오 #fee500</div>
+<div style="height:44px;flex:1;border-radius:12px;background:#e5484d;display:flex;align-items:center;justify-content:center;font:600 13px/1 Pretendard,sans-serif;color:#fff">경고 #e5484d</div>
 </div>
-<div style="flex:1;min-width:300px;display:flex;flex-direction:column;gap:10px">
-<div style="font:500 12px/1 Pretendard,sans-serif;color:#3f3e3a">지도 핀 체계</div>
-<div style="display:flex;gap:12px;align-items:center;background:#f3f1ec;border-radius:8px;padding:16px 14px">
-<div style="display:flex;flex-direction:column;align-items:center;gap:7px"><div style="width:20px;height:20px;border-radius:50%;background:var(--accent,#4a6b52);border:2.5px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.2)"></div><div style="font:400 10.5px/1 Pretendard,sans-serif;color:#6d6b64">검증됨</div></div>
-<div style="display:flex;flex-direction:column;align-items:center;gap:7px"><div style="width:20px;height:20px;border-radius:50%;background:#22221f;border:2.5px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.2)"></div><div style="font:400 10.5px/1 Pretendard,sans-serif;color:#6d6b64">내 기록</div></div>
-<div style="display:flex;flex-direction:column;align-items:center;gap:7px"><div style="width:14px;height:14px;border-radius:50%;background:#fff;border:1.5px solid #9d9c96"></div><div style="font:400 10.5px/1 Pretendard,sans-serif;color:#6d6b64">후보</div></div>
-<div style="display:flex;flex-direction:column;align-items:center;gap:7px"><div style="width:26px;height:26px;border-radius:50%;border:1.5px dashed #9d9c96"></div><div style="font:400 10.5px/1 Pretendard,sans-serif;color:#6d6b64">빈 지역</div></div>
-<div style="display:flex;flex-direction:column;align-items:center;gap:7px"><div style="padding:4px 7px;border-radius:6px;background:#22221f;font:500 10px/1 'IBM Plex Mono',monospace;color:#fff">12</div><div style="font:400 10.5px/1 Pretendard,sans-serif;color:#6d6b64">묶음</div></div>
-</div>
-<div style="font:400 11.5px/1.6 Pretendard,sans-serif;color:#9d9c96">베이스맵: 배경 #faf9f7, 도로 #fff, 녹지 #e7eae2, 라벨 #6d6b64. 핀은 흰 테두리 2.5px로 분리.</div>
+<div style="font:400 12.5px/1.6 Pretendard,sans-serif;color:rgba(250,249,247,.45)">카카오 노랑은 로그인 버튼에만. 경고 빨강은 정원 초과·삭제 확인에만.</div>
 </div>
 </div>
 </div>
 </section>
 
-<section style="padding:44px 0 0;display:flex;flex-direction:column;gap:18px;border-top:1px solid rgba(0,0,0,.1);margin-top:26px">
-<div style="display:flex;align-items:baseline;gap:12px">
-<div style="font:500 11px/1 'IBM Plex Mono',monospace;letter-spacing:.08em;color:#9d9c96">03 — 타이포</div>
-<div style="font:400 12.5px/1 Pretendard,sans-serif;color:#9d9c96">Pretendard 400/500/600 + IBM Plex Mono(번호·진행률·좌표에만).</div>
+<section style="display:flex;flex-direction:column;gap:18px">
+<div style="font:700 13px/1 Pretendard,sans-serif;color:#d4f53c;white-space:nowrap">03 타이포 — Pretendard 하나</div>
+<div style="background:#1d1d1b;border:1px solid rgba(250,249,247,.08);border-radius:22px;padding:8px 26px">
+<div style="display:flex;align-items:center;gap:28px;padding:22px 0;border-bottom:1px solid rgba(250,249,247,.07)"><div style="width:170px;flex:none;font:500 12px/1.5 Pretendard,sans-serif;color:rgba(250,249,247,.45)">hero<br>800 · 52/1.1 · -.05em</div><div style="font:800 52px/1.1 Pretendard,sans-serif;letter-spacing:-.05em;color:#faf9f7">124<span style="color:#d4f53c">곳</span></div></div>
+<div style="display:flex;align-items:center;gap:28px;padding:22px 0;border-bottom:1px solid rgba(250,249,247,.07)"><div style="width:170px;flex:none;font:500 12px/1.5 Pretendard,sans-serif;color:rgba(250,249,247,.45)">display<br>800 · 30/1.2 · -.045em</div><div style="font:800 30px/1.2 Pretendard,sans-serif;letter-spacing:-.045em;color:#faf9f7">망원동 김반장</div></div>
+<div style="display:flex;align-items:center;gap:28px;padding:22px 0;border-bottom:1px solid rgba(250,249,247,.07)"><div style="width:170px;flex:none;font:500 12px/1.5 Pretendard,sans-serif;color:rgba(250,249,247,.45)">title<br>700 · 18/1.3 · -.03em</div><div style="font:700 18px/1.3 Pretendard,sans-serif;letter-spacing:-.03em;color:#faf9f7">걸어서 10분 안에 11곳</div></div>
+<div style="display:flex;align-items:center;gap:28px;padding:22px 0;border-bottom:1px solid rgba(250,249,247,.07)"><div style="width:170px;flex:none;font:500 12px/1.5 Pretendard,sans-serif;color:rgba(250,249,247,.45)">body<br>400 · 14.5/1.6 · 62%</div><div style="font:400 14.5px/1.6 Pretendard,sans-serif;color:rgba(250,249,247,.62)">막창이랑 소금창 둘 다 좋았음. 6시 전에 가야 자리 있어요.</div></div>
+<div style="display:flex;align-items:center;gap:28px;padding:22px 0"><div style="width:170px;flex:none;font:500 12px/1.5 Pretendard,sans-serif;color:rgba(250,249,247,.45)">label<br>700 · 12.5/1</div><div style="display:flex;gap:8px"><div style="padding:8px 12px;border-radius:999px;background:#d4f53c;font:700 12.5px/1 Pretendard,sans-serif;color:#1d1d1b">또 갈래</div><div style="padding:8px 12px;border-radius:999px;background:#31302d;font:700 12.5px/1 Pretendard,sans-serif;color:#faf9f7">걸어서 10분</div></div></div>
 </div>
-<div style="background:#fff;border:1px solid rgba(0,0,0,.07);border-radius:12px;padding:8px 22px;display:flex;flex-direction:column">
-<div style="display:flex;align-items:center;gap:24px;padding:18px 0;border-bottom:1px solid rgba(0,0,0,.055)">
-<div style="width:158px;flex:none;font:400 11px/1.5 'IBM Plex Mono',monospace;color:#9d9c96">display<br>600 · 27/1.22 · -.035em</div>
-<div style="font:600 27px/1.22 Pretendard,sans-serif;letter-spacing:-.035em;color:#22221f">서울 25개 구 중 9개</div>
+</section>
+
+<section style="display:flex;flex-direction:column;gap:18px">
+<div style="font:700 13px/1 Pretendard,sans-serif;color:#d4f53c;white-space:nowrap">04 모양 · 시그니처</div>
+<div style="display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:12px">
+<div style="background:#1d1d1b;border:1px solid rgba(250,249,247,.08);border-radius:22px;padding:24px;display:flex;flex-direction:column;gap:16px">
+<div style="font:700 13px/1 Pretendard,sans-serif;color:#faf9f7">스티커 카드 — 폴라로이드</div>
+<div style="height:230px;position:relative">
+<div style="position:absolute;left:16px;top:20px;width:150px;padding:6px 6px 26px;border-radius:14px;background:#faf9f7;transform:rotate(-7deg);box-shadow:0 22px 40px -16px rgba(0,0,0,.7)"><div style="height:150px;border-radius:9px;background:#3a3833"></div></div>
+<div style="position:absolute;left:120px;top:36px;width:170px;padding:7px 7px 0;border-radius:16px;background:#faf9f7;transform:rotate(3deg);box-shadow:0 26px 44px -16px rgba(0,0,0,.75)"><div style="height:140px;border-radius:10px;background:#45423d"></div><div style="padding:10px 3px 12px;font:700 13.5px/1 Pretendard,sans-serif;letter-spacing:-.03em;color:#1d1d1b;white-space:nowrap">망원동 김반장</div>
+<div style="position:absolute;right:-14px;top:-12px;padding:7px 11px;border-radius:999px;background:#d4f53c;transform:rotate(7deg);font:700 12px/1 Pretendard,sans-serif;color:#1d1d1b;white-space:nowrap;box-shadow:0 6px 14px -4px rgba(0,0,0,.5)">또 갈래</div></div>
 </div>
-<div style="display:flex;align-items:center;gap:24px;padding:18px 0;border-bottom:1px solid rgba(0,0,0,.055)">
-<div style="width:158px;flex:none;font:400 11px/1.5 'IBM Plex Mono',monospace;color:#9d9c96">section<br>600 · 17/1.25 · -.03em</div>
-<div style="font:600 17px/1.25 Pretendard,sans-serif;letter-spacing:-.03em;color:#22221f">마포구</div>
+<div style="font:400 12.5px/1.6 Pretendard,sans-serif;color:rgba(250,249,247,.5)">크림 테두리 7px, 라운드 16, 회전 −8°~+8°. 겹치면 앞 카드만 캡션을 가집니다. 라임 스티커는 오른쪽 위 모서리에 걸쳐 붙입니다.</div>
 </div>
-<div style="display:flex;align-items:center;gap:24px;padding:18px 0;border-bottom:1px solid rgba(0,0,0,.055)">
-<div style="width:158px;flex:none;font:400 11px/1.5 'IBM Plex Mono',monospace;color:#9d9c96">row-title<br>500 · 14.5/1.2 · -.02em</div>
-<div style="font:500 14.5px/1.2 Pretendard,sans-serif;letter-spacing:-.02em;color:#22221f">연남동 오래된집</div>
+<div style="background:#1d1d1b;border:1px solid rgba(250,249,247,.08);border-radius:22px;padding:24px;display:flex;flex-direction:column;gap:16px">
+<div style="font:700 13px/1 Pretendard,sans-serif;color:#faf9f7">라운드</div>
+<div style="display:flex;gap:10px;align-items:center">
+<div style="width:48px;height:48px;border-radius:12px;background:#31302d"></div>
+<div style="width:48px;height:48px;border-radius:18px;background:#31302d"></div>
+<div style="width:48px;height:48px;border-radius:24px;background:#31302d"></div>
+<div style="width:72px;height:48px;border-radius:999px;background:#31302d"></div>
 </div>
-<div style="display:flex;align-items:center;gap:24px;padding:18px 0;border-bottom:1px solid rgba(0,0,0,.055)">
-<div style="width:158px;flex:none;font:400 11px/1.5 'IBM Plex Mono',monospace;color:#9d9c96">body<br>400 · 14/1.65</div>
-<div style="font:400 14px/1.65 Pretendard,sans-serif;color:#3f3e3a">합정동 쪽이 아직 비어 있어요. 지현이 후보 두 곳을 남겨뒀습니다.</div>
+<div style="font:400 12.5px/1.7 Pretendard,sans-serif;color:rgba(250,249,247,.5)">12 썸네일 · 18 버튼·카드 · 24 시트 · 999 칩·스티커</div>
+<div style="height:1px;background:rgba(250,249,247,.07)"></div>
+<div style="font:700 13px/1 Pretendard,sans-serif;color:#faf9f7">간격</div>
+<div style="font:400 12.5px/1.7 Pretendard,sans-serif;color:rgba(250,249,247,.5)">4의 배수 · 화면 좌우 20 · 카드 안 16 · 섹션 28</div>
 </div>
-<div style="display:flex;align-items:center;gap:24px;padding:18px 0;border-bottom:1px solid rgba(0,0,0,.055)">
-<div style="width:158px;flex:none;font:400 11px/1.5 'IBM Plex Mono',monospace;color:#9d9c96">meta<br>400 · 12/1.4 · n-500</div>
-<div style="font:400 12px/1.4 Pretendard,sans-serif;color:#6d6b64">국수 · 또 갈래 · 친구 2명</div>
+<div style="background:#1d1d1b;border:1px solid rgba(250,249,247,.08);border-radius:22px;padding:24px;display:flex;flex-direction:column;gap:16px">
+<div style="font:700 13px/1 Pretendard,sans-serif;color:#faf9f7">사진 위 글자</div>
+<div style="height:150px;border-radius:18px;background:#45423d;position:relative;overflow:hidden">
+<div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(29,29,27,0) 35%,#1d1d1b 100%)"></div>
+<div style="position:absolute;top:12px;left:12px;padding:7px 11px;border-radius:999px;background:rgba(29,29,27,.55);backdrop-filter:blur(12px);font:600 11.5px/1 Pretendard,sans-serif;color:#faf9f7;white-space:nowrap">지현이 찍음</div>
+<div style="position:absolute;left:14px;bottom:12px;font:800 22px/1.1 Pretendard,sans-serif;letter-spacing:-.04em;color:#faf9f7">한잔의 시간</div>
 </div>
-<div style="display:flex;align-items:center;gap:24px;padding:18px 0;border-bottom:1px solid rgba(0,0,0,.055)">
-<div style="width:158px;flex:none;font:400 11px/1.5 'IBM Plex Mono',monospace;color:#9d9c96">index<br>mono 400 · 11/1</div>
-<div style="display:flex;align-items:center;gap:14px"><div style="font:400 11px/1 'IBM Plex Mono',monospace;color:#c2c0b8">012</div><div style="font:500 12px/1 'IBM Plex Mono',monospace;color:var(--accent,#4a6b52)">14/40</div><div style="font:400 11px/1 'IBM Plex Mono',monospace;color:#9d9c96">37.556, 126.914</div></div>
-</div>
-<div style="display:flex;align-items:center;gap:24px;padding:18px 0">
-<div style="width:158px;flex:none;font:400 11px/1.5 'IBM Plex Mono',monospace;color:#9d9c96">counter<br>600 · 40/1 · tnum</div>
-<div style="display:flex;align-items:baseline;gap:8px"><div style="font:600 40px/1 Pretendard,sans-serif;letter-spacing:-.04em;color:#22221f;font-variant-numeric:tabular-nums">124</div><div style="font:400 13px/1 Pretendard,sans-serif;color:#9d9c96">곳 · 9개 구</div></div>
+<div style="font:400 12.5px/1.6 Pretendard,sans-serif;color:rgba(250,249,247,.5)">사진 하단은 화면 바탕색(#1d1d1b)으로 녹여서 이어지게. 메타 정보는 55% 잉크 블러 칩.</div>
 </div>
 </div>
 </section>
 
-<section style="padding:44px 0 0;display:flex;flex-direction:column;gap:18px;border-top:1px solid rgba(0,0,0,.1);margin-top:26px">
-<div style="font:500 11px/1 'IBM Plex Mono',monospace;letter-spacing:.08em;color:#9d9c96">04 — 간격 · 모양 · 높낮이 · 목록 밀도</div>
-<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
-<div style="background:#fff;border:1px solid rgba(0,0,0,.07);border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:14px">
-<div style="font:500 12px/1 Pretendard,sans-serif;color:#3f3e3a">간격 — 4의 배수</div>
-<div style="display:flex;align-items:flex-end;gap:8px">
-<div style="width:4px;height:4px;background:var(--accent,#4a6b52)"></div>
-<div style="width:8px;height:8px;background:var(--accent,#4a6b52)"></div>
-<div style="width:12px;height:12px;background:var(--accent,#4a6b52)"></div>
-<div style="width:16px;height:16px;background:var(--accent,#4a6b52)"></div>
-<div style="width:24px;height:24px;background:var(--accent,#4a6b52)"></div>
-<div style="width:32px;height:32px;background:var(--accent,#4a6b52)"></div>
-</div>
-<div style="font:400 11.5px/1.7 'IBM Plex Mono',monospace;color:#6d6b64">4 8 12 16 20 24 32<br>화면 좌우 16 · 행 패딩 12/16 · 섹션 24</div>
-</div>
-<div style="background:#fff;border:1px solid rgba(0,0,0,.07);border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:14px">
-<div style="font:500 12px/1 Pretendard,sans-serif;color:#3f3e3a">라운드 · 높낮이</div>
-<div style="display:flex;align-items:center;gap:10px">
-<div style="width:44px;height:44px;background:#f3f1ec;border:1px solid rgba(0,0,0,.08);border-radius:6px"></div>
-<div style="width:44px;height:44px;background:#f3f1ec;border:1px solid rgba(0,0,0,.08);border-radius:8px"></div>
-<div style="width:44px;height:44px;background:#f3f1ec;border:1px solid rgba(0,0,0,.08);border-radius:16px"></div>
-<div style="width:64px;height:44px;background:#fff;border:1px solid rgba(0,0,0,.06);border-radius:16px;box-shadow:0 1px 2px rgba(34,34,31,.04),0 12px 28px -22px rgba(34,34,31,.3)"></div>
-</div>
-<div style="font:400 11.5px/1.7 'IBM Plex Mono',monospace;color:#6d6b64">6 사진 · 8 썸네일 · 16 카드<br>card: 0 1px 2px/.04 + 0 12px 28px -22px/.30</div>
-</div>
-<div style="background:#fff;border:1px solid rgba(0,0,0,.07);border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:14px">
-<div style="font:500 12px/1 Pretendard,sans-serif;color:#3f3e3a">목록 밀도 — 두 가지</div>
-<div style="display:flex;flex-direction:column;gap:8px">
-<div style="display:flex;align-items:center;gap:10px;padding:12px;border:1px solid rgba(0,0,0,.06);border-radius:8px"><div style="width:52px;height:52px;border-radius:8px;background:#e9e6e1"></div><div style="font:400 11.5px/1.5 'IBM Plex Mono',monospace;color:#6d6b64">index 76px<br>썸네일 52</div></div>
-<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid rgba(0,0,0,.06);border-radius:8px"><div style="width:32px;height:32px;border-radius:6px;background:#e9e6e1"></div><div style="font:400 11.5px/1.5 'IBM Plex Mono',monospace;color:#6d6b64">compact 52px<br>썸네일 32</div></div>
-</div>
-</div>
-</div>
-</section>
-
-<section style="padding:44px 0 0;display:flex;flex-direction:column;gap:18px;border-top:1px solid rgba(0,0,0,.1);margin-top:26px">
-<div style="display:flex;align-items:baseline;gap:12px">
-<div style="font:500 11px/1 'IBM Plex Mono',monospace;letter-spacing:.08em;color:#9d9c96">05 — 컴포넌트</div>
-<div style="font:400 12.5px/1 Pretendard,sans-serif;color:#9d9c96">터치 영역 44px 이상. 390px 기준으로 그렸습니다.</div>
-</div>
+<section style="display:flex;flex-direction:column;gap:18px">
+<div style="font:700 13px/1 Pretendard,sans-serif;color:#d4f53c;white-space:nowrap">05 컴포넌트</div>
 <div style="display:flex;flex-wrap:wrap;gap:12px">
 
-<div style="width:360px;box-sizing:border-box;background:#fff;border:1px solid rgba(0,0,0,.07);border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:16px">
-<div style="font:500 12px/1 Pretendard,sans-serif;color:#3f3e3a">평가 — 3단계 (별점 없음)</div>
-<div style="display:flex;flex-direction:column;gap:9px">
-<div style="display:flex;align-items:center;gap:11px;padding:13px 14px;border:1px solid var(--accent,#4a6b52);border-radius:10px;background:#e9efe9">
-<div style="width:8px;height:8px;border-radius:50%;background:var(--accent,#4a6b52)"></div>
-<div style="font:500 13.5px/1 Pretendard,sans-serif;color:#22221f">또 갈래</div>
-<div style="margin-left:auto;font:400 11.5px/1 'IBM Plex Mono',monospace;color:var(--accent,#4a6b52)">3/3</div>
+<div style="width:376px;box-sizing:border-box;background:#1d1d1b;border:1px solid rgba(250,249,247,.08);border-radius:22px;padding:24px;display:flex;flex-direction:column;gap:18px">
+<div style="font:700 13px/1 Pretendard,sans-serif;color:#faf9f7">지도 핀 — 모양이 평가</div>
+<div style="height:96px;border-radius:16px;background:#232321;display:flex;align-items:center;justify-content:space-around;padding:0 10px">
+<div style="display:flex;flex-direction:column;align-items:center;gap:9px"><svg width="28" height="36" viewBox="0 0 26 34" style="display:block;filter:drop-shadow(0 2px 4px rgba(0,0,0,.5))"><path d="M13 1.5C6.6 1.5 1.5 6.6 1.5 13c0 8.3 11.5 19.5 11.5 19.5S24.5 21.3 24.5 13C24.5 6.6 19.4 1.5 13 1.5z" fill="#d4f53c" stroke="#1d1d1b" stroke-width="2"></path><circle cx="13" cy="13" r="4.5" fill="#1d1d1b"></circle></svg><div style="font:600 11px/1 Pretendard,sans-serif;color:rgba(250,249,247,.62)">또 갈래</div></div>
+<div style="display:flex;flex-direction:column;align-items:center;gap:9px"><div style="width:20px;height:20px;box-sizing:border-box;border-radius:50%;background:#8fb098;border:2.5px solid #1d1d1b;box-shadow:0 0 0 1.5px rgba(250,249,247,.25)"></div><div style="font:600 11px/1 Pretendard,sans-serif;color:rgba(250,249,247,.62)">괜찮아</div></div>
+<div style="display:flex;flex-direction:column;align-items:center;gap:9px"><div style="width:12px;height:12px;border-radius:50%;background:rgba(250,249,247,.3)"></div><div style="font:600 11px/1 Pretendard,sans-serif;color:rgba(250,249,247,.62)">한 번은</div></div>
+<div style="display:flex;flex-direction:column;align-items:center;gap:9px"><div style="padding:6px 10px;border-radius:999px;background:#faf9f7;font:800 12px/1 Pretendard,sans-serif;color:#1d1d1b">12</div><div style="font:600 11px/1 Pretendard,sans-serif;color:rgba(250,249,247,.62)">묶음</div></div>
+<div style="display:flex;flex-direction:column;align-items:center;gap:9px"><div style="width:14px;height:14px;border-radius:50%;background:#faf9f7;box-shadow:0 0 0 7px rgba(250,249,247,.14)"></div><div style="font:600 11px/1 Pretendard,sans-serif;color:rgba(250,249,247,.62)">내 위치</div></div>
 </div>
-<div style="display:flex;align-items:center;gap:11px;padding:13px 14px;border:1px solid rgba(0,0,0,.09);border-radius:10px">
-<div style="width:8px;height:8px;border-radius:50%;border:1.5px solid #9d9c96"></div>
-<div style="font:400 13.5px/1 Pretendard,sans-serif;color:#3f3e3a">괜찮아</div>
-<div style="margin-left:auto;font:400 11.5px/1 'IBM Plex Mono',monospace;color:#c2c0b8">2/3</div>
-</div>
-<div style="display:flex;align-items:center;gap:11px;padding:13px 14px;border:1px solid rgba(0,0,0,.09);border-radius:10px">
-<div style="width:8px;height:8px;border-radius:50%;border:1.5px solid #cfcdc5"></div>
-<div style="font:400 13.5px/1 Pretendard,sans-serif;color:#3f3e3a">한 번은</div>
-<div style="margin-left:auto;font:400 11.5px/1 'IBM Plex Mono',monospace;color:#c2c0b8">1/3</div>
-</div>
-</div>
-<div style="font:400 11.5px/1.6 Pretendard,sans-serif;color:#9d9c96">목록에서는 점 하나(딥그린/회색테/연회색테)만으로 단계를 표시합니다. 평균·점수·소수점은 만들지 않습니다.</div>
+<div style="font:400 12.5px/1.6 Pretendard,sans-serif;color:rgba(250,249,247,.5)">또 갈래만 물방울 모양의 라임 핀. 괜찮아는 클럽 색 원, 한 번은 흐린 점(기본 숨김).</div>
 </div>
 
-<div style="width:360px;box-sizing:border-box;background:#fff;border:1px solid rgba(0,0,0,.07);border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:16px">
-<div style="font:500 12px/1 Pretendard,sans-serif;color:#3f3e3a">진행률 — 수집의 심장</div>
-<div style="display:flex;flex-direction:column;gap:6px">
-<div style="display:flex;align-items:center;justify-content:space-between"><div style="font:500 13px/1 Pretendard,sans-serif;color:#22221f">서울</div><div style="font:500 11.5px/1 'IBM Plex Mono',monospace;color:var(--accent,#4a6b52)">36%</div></div>
-<div style="height:6px;border-radius:99px;background:#eeece7;overflow:hidden"><div style="width:36%;height:100%;background:var(--accent,#4a6b52)"></div></div>
-</div>
-<div style="display:flex;flex-direction:column;gap:8px">
-<div style="font:400 11.5px/1 Pretendard,sans-serif;color:#9d9c96">지역별 — 25칸 격자(구 단위)</div>
-<div style="display:grid;grid-template-columns:repeat(10,1fr);gap:4px">
-<div style="aspect-ratio:1;border-radius:3px;background:#4a6b52"></div><div style="aspect-ratio:1;border-radius:3px;background:#4a6b52"></div><div style="aspect-ratio:1;border-radius:3px;background:#6d8b73"></div><div style="aspect-ratio:1;border-radius:3px;background:#eeece7"></div><div style="aspect-ratio:1;border-radius:3px;background:#4a6b52"></div><div style="aspect-ratio:1;border-radius:3px;background:#eeece7"></div><div style="aspect-ratio:1;border-radius:3px;background:#a8bcac"></div><div style="aspect-ratio:1;border-radius:3px;background:#eeece7"></div><div style="aspect-ratio:1;border-radius:3px;background:#eeece7"></div><div style="aspect-ratio:1;border-radius:3px;background:#6d8b73"></div>
-<div style="aspect-ratio:1;border-radius:3px;background:#eeece7"></div><div style="aspect-ratio:1;border-radius:3px;background:#a8bcac"></div><div style="aspect-ratio:1;border-radius:3px;background:#eeece7"></div><div style="aspect-ratio:1;border-radius:3px;background:#4a6b52"></div><div style="aspect-ratio:1;border-radius:3px;background:#eeece7"></div><div style="aspect-ratio:1;border-radius:3px;background:#eeece7"></div><div style="aspect-ratio:1;border-radius:3px;background:#6d8b73"></div><div style="aspect-ratio:1;border-radius:3px;background:#eeece7"></div><div style="aspect-ratio:1;border-radius:3px;background:#eeece7"></div><div style="aspect-ratio:1;border-radius:3px;background:#eeece7"></div>
-<div style="aspect-ratio:1;border-radius:3px;background:#4a6b52"></div><div style="aspect-ratio:1;border-radius:3px;background:#eeece7"></div><div style="aspect-ratio:1;border-radius:3px;background:#eeece7"></div><div style="aspect-ratio:1;border-radius:3px;background:#a8bcac"></div><div style="aspect-ratio:1;border-radius:3px;background:#eeece7"></div>
-</div>
-<div style="font:400 11px/1.6 'IBM Plex Mono',monospace;color:#9d9c96">0 · eeece7 / 1–2 · a8bcac / 3–5 · 6d8b73 / 6+ · 4a6b52</div>
-</div>
-<div style="height:1px;background:rgba(0,0,0,.055)"></div>
-<div style="display:flex;align-items:center;gap:12px">
-<div style="width:34px;height:34px;border-radius:50%;border:3px solid #eeece7;border-top-color:var(--accent,#4a6b52);border-right-color:var(--accent,#4a6b52);transform:rotate(45deg)"></div>
-<div style="font:400 12px/1.5 Pretendard,sans-serif;color:#6d6b64">지역 카드용 링 게이지 — 3px, 45° 시작.<br>숫자는 항상 “14/40” 형태로 병기.</div>
-</div>
-</div>
-
-<div style="width:360px;box-sizing:border-box;background:#fff;border:1px solid rgba(0,0,0,.07);border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:16px">
-<div style="font:500 12px/1 Pretendard,sans-serif;color:#3f3e3a">버튼 · 칩 · 세그먼트</div>
-<div style="display:flex;flex-direction:column;gap:9px">
-<div style="height:48px;border-radius:10px;background:#22221f;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="15" height="18" viewBox="0 0 15 18" fill="none" style="display:block"><path d="M2 2.6h11v13.2l-5.5-4-5.5 4V2.6z" fill="#fff"></path></svg><div style="font:500 14.5px/1 Pretendard,sans-serif;letter-spacing:-.02em;color:#fff">스크랩하기</div></div>
-<div style="display:flex;gap:9px">
-<div style="width:48px;height:48px;border-radius:10px;background:#22221f;display:flex;align-items:center;justify-content:center"><svg width="15" height="18" viewBox="0 0 15 18" fill="none" style="display:block"><path d="M2 2.6h11v13.2l-5.5-4-5.5 4V2.6z" fill="#fff"></path></svg></div>
-<div style="width:48px;height:48px;border-radius:10px;background:#fff;border:1px solid rgba(0,0,0,.14);display:flex;align-items:center;justify-content:center"><svg width="15" height="18" viewBox="0 0 15 18" fill="none" style="display:block"><path d="M2.75 2.35h9.5v13.05l-4.75-3.45-4.75 3.45V2.35z" stroke="#3f3e3a" stroke-width="1.5" fill="none" stroke-linejoin="round"></path></svg></div>
-<div style="flex:1;display:flex;align-items:center;font:400 11.5px/1.6 Pretendard,sans-serif;color:#9d9c96">스크랩 아이콘 버튼 — 채워짐(스크랩됨) / 선 1.5px(기본). 목록·상세·미니 카드에서 같은 자리에 둡니다.</div>
-</div>
-<div style="height:48px;border-radius:10px;background:var(--accent,#4a6b52);display:flex;align-items:center;justify-content:center;font:500 14.5px/1 Pretendard,sans-serif;letter-spacing:-.02em;color:#fff">또 갈래로 기록</div>
-<div style="height:48px;border-radius:10px;border:1px solid rgba(0,0,0,.14);display:flex;align-items:center;justify-content:center;font:500 14.5px/1 Pretendard,sans-serif;letter-spacing:-.02em;color:#3f3e3a">지도에서 보기</div>
-</div>
-<div style="display:flex;gap:6px;flex-wrap:wrap">
-<div style="padding:8px 12px;border-radius:8px;background:#22221f;font:500 12.5px/1 Pretendard,sans-serif;color:#fff">전체 124</div>
-<div style="padding:8px 12px;border-radius:8px;border:1px solid rgba(0,0,0,.1);font:400 12.5px/1 Pretendard,sans-serif;color:#3f3e3a">또 갈래 41</div>
-<div style="padding:8px 12px;border-radius:8px;border:1px solid rgba(0,0,0,.1);font:400 12.5px/1 Pretendard,sans-serif;color:#3f3e3a">친구 검증 33</div>
-<div style="padding:8px 12px;border-radius:8px;border:1px dashed #cfcdc5;font:400 12.5px/1 Pretendard,sans-serif;color:#9d9c96">미방문 12</div>
-</div>
-<div style="display:flex;padding:3px;background:#f3f1ec;border-radius:9px">
-<div style="flex:1;height:34px;border-radius:7px;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.06);display:flex;align-items:center;justify-content:center;font:500 12.5px/1 Pretendard,sans-serif;color:#22221f">스크랩</div>
-<div style="flex:1;height:34px;display:flex;align-items:center;justify-content:center;font:400 12.5px/1 Pretendard,sans-serif;color:#6d6b64">지역</div>
-<div style="flex:1;height:34px;display:flex;align-items:center;justify-content:center;font:400 12.5px/1 Pretendard,sans-serif;color:#6d6b64">사진</div>
-</div>
-<div style="font:400 11.5px/1.6 Pretendard,sans-serif;color:#9d9c96">칩에는 항상 개수를 붙입니다 — 필터가 동시에 카운터 역할을 합니다.</div>
-</div>
-
-<div style="width:432px;box-sizing:border-box;background:#fff;border:1px solid rgba(0,0,0,.07);border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:14px">
-<div style="font:500 12px/1 Pretendard,sans-serif;color:#3f3e3a">카드 1 — 지역 컬렉션 (핵심 컴포넌트)</div>
-<div style="width:390px;background:#fff;border:1px solid rgba(0,0,0,.06);border-radius:16px;box-shadow:0 1px 2px rgba(34,34,31,.04),0 12px 28px -22px rgba(34,34,31,.3);overflow:hidden">
-<div style="padding:16px 16px 13px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;border-bottom:1px solid rgba(0,0,0,.06)">
-<div style="display:flex;flex-direction:column;gap:5px"><div style="font:600 17px/1.25 Pretendard,sans-serif;letter-spacing:-.03em;color:#22221f">마포구</div><div style="font:400 12px/1 Pretendard,sans-serif;color:#6d6b64">모은 곳 14 · 친구 검증 6</div></div>
-<div style="display:flex;align-items:center;gap:7px"><div style="width:26px;height:26px;border-radius:50%;border:2px solid #eeece7;border-top-color:var(--accent,#4a6b52);border-right-color:var(--accent,#4a6b52);transform:rotate(45deg)"></div><div style="font:500 12px/1 'IBM Plex Mono',monospace;color:var(--accent,#4a6b52)">14/40</div></div>
-</div>
-<div style="display:flex;flex-direction:column">
-<div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid rgba(0,0,0,.05)">
-<div style="width:52px;height:52px;flex:none;border-radius:8px;background:#e9e6e1;background-image:repeating-linear-gradient(115deg,rgba(0,0,0,.028) 0 8px,rgba(0,0,0,0) 8px 16px)"></div>
-<div style="flex:1;display:flex;flex-direction:column;gap:4px;min-width:0">
-<div style="display:flex;align-items:center;gap:6px"><div style="font:500 14.5px/1.2 Pretendard,sans-serif;letter-spacing:-.02em;color:#22221f">연남동 오래된집</div><div style="width:5px;height:5px;border-radius:50%;background:var(--accent,#4a6b52)"></div></div>
-<div style="font:400 12px/1 Pretendard,sans-serif;color:#6d6b64">국수 · 또 갈래 · 친구 2명</div>
-</div>
-<div style="font:400 11px/1 'IBM Plex Mono',monospace;color:#c2c0b8">012</div>
-</div>
-<div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid rgba(0,0,0,.05)">
-<div style="width:52px;height:52px;flex:none;border-radius:8px;background:#e9e6e1;background-image:repeating-linear-gradient(115deg,rgba(0,0,0,.028) 0 8px,rgba(0,0,0,0) 8px 16px)"></div>
-<div style="flex:1;display:flex;flex-direction:column;gap:4px;min-width:0">
-<div style="font:500 14.5px/1.2 Pretendard,sans-serif;letter-spacing:-.02em;color:#22221f">망원동 김반장</div>
-<div style="font:400 12px/1 Pretendard,sans-serif;color:#6d6b64">곱창 · 괜찮아 · 친구 3명</div>
-</div>
-<div style="font:400 11px/1 'IBM Plex Mono',monospace;color:#c2c0b8">013</div>
-</div>
-<div style="display:flex;align-items:center;gap:12px;padding:12px 16px;opacity:.55">
-<div style="width:52px;height:52px;flex:none;border-radius:8px;border:1px dashed #d5d2ca;display:flex;align-items:center;justify-content:center;font:400 15px/1 Pretendard,sans-serif;color:#c2c0b8">+</div>
-<div style="flex:1;font:400 13px/1.3 Pretendard,sans-serif;color:#6d6b64">합정동 쪽이 아직 비어 있어요</div>
-<div style="font:400 11px/1 'IBM Plex Mono',monospace;color:#c2c0b8">014</div>
-</div>
-</div>
-</div>
-</div>
-
-<div style="width:432px;box-sizing:border-box;background:#fff;border:1px solid rgba(0,0,0,.07);border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:14px">
-<div style="font:500 12px/1 Pretendard,sans-serif;color:#3f3e3a">카드 2 — 지도 시트 · 카드 3 — 자동 등록 알림</div>
-<div style="width:390px;display:flex;flex-direction:column;gap:14px">
-<div style="border:1px solid rgba(0,0,0,.06);border-radius:16px 16px 12px 12px;box-shadow:0 -1px 24px rgba(34,34,31,.1);padding:0 16px 16px;background:#fff">
-<div style="height:28px;display:flex;align-items:center;justify-content:center"><div style="width:36px;height:4px;border-radius:99px;background:#eeece7"></div></div>
-<div style="display:flex;flex-direction:column;gap:12px">
-<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
-<div style="display:flex;flex-direction:column;gap:5px"><div style="font:600 19px/1.2 Pretendard,sans-serif;letter-spacing:-.03em;color:#22221f">망원동 김반장</div><div style="font:400 12px/1 Pretendard,sans-serif;color:#6d6b64">곱창 · 지금 여기서 200m</div></div>
-<div style="font:400 11px/1 'IBM Plex Mono',monospace;color:#c2c0b8">013</div>
-</div>
-<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#e9efe9;border-radius:10px">
-<div style="width:6px;height:6px;border-radius:50%;background:var(--accent,#4a6b52)"></div>
-<div style="font:400 12.5px/1.4 Pretendard,sans-serif;color:#3a5641">지현·민기·세영이 “또 갈래”라고 남긴 곳</div>
-</div>
-<div style="display:flex;gap:6px">
-<div style="flex:1;height:70px;border-radius:6px;background:#e9e6e1;background-image:repeating-linear-gradient(115deg,rgba(0,0,0,.028) 0 8px,rgba(0,0,0,0) 8px 16px)"></div>
-<div style="flex:1;height:70px;border-radius:6px;background:#e9e6e1;background-image:repeating-linear-gradient(115deg,rgba(0,0,0,.028) 0 8px,rgba(0,0,0,0) 8px 16px)"></div>
-<div style="flex:1;height:70px;border-radius:6px;background:#e9e6e1;background-image:repeating-linear-gradient(115deg,rgba(0,0,0,.028) 0 8px,rgba(0,0,0,0) 8px 16px)"></div>
-<div style="flex:1;height:70px;border-radius:6px;background:#f3f1ec;display:flex;align-items:center;justify-content:center;font:500 12px/1 'IBM Plex Mono',monospace;color:#6d6b64">+4</div>
-</div>
+<div style="width:376px;box-sizing:border-box;background:#1d1d1b;border:1px solid rgba(250,249,247,.08);border-radius:22px;padding:24px;display:flex;flex-direction:column;gap:14px">
+<div style="font:700 13px/1 Pretendard,sans-serif;color:#faf9f7">평가 — 3단계</div>
 <div style="display:flex;gap:8px">
-<div style="flex:1;height:46px;border-radius:10px;background:#22221f;display:flex;align-items:center;justify-content:center;font:500 14px/1 Pretendard,sans-serif;letter-spacing:-.02em;color:#fff">여기 스크랩</div>
-<div style="width:46px;height:46px;border-radius:10px;border:1px solid rgba(0,0,0,.12);display:flex;align-items:center;justify-content:center"><svg width="14" height="17" viewBox="0 0 15 18" fill="none" style="display:block"><path d="M2.75 2.35h9.5v13.05l-4.75-3.45-4.75 3.45V2.35z" stroke="#6d6b64" stroke-width="1.5" fill="none" stroke-linejoin="round"></path></svg></div>
+<div style="flex:1.3;height:56px;border-radius:18px;background:#d4f53c;display:flex;align-items:center;justify-content:center;gap:7px"><svg width="12" height="16" viewBox="0 0 26 34" style="display:block"><path d="M13 1.5C6.6 1.5 1.5 6.6 1.5 13c0 8.3 11.5 19.5 11.5 19.5S24.5 21.3 24.5 13C24.5 6.6 19.4 1.5 13 1.5z" fill="#1d1d1b"></path></svg><div style="font:800 15px/1 Pretendard,sans-serif;letter-spacing:-.03em;color:#1d1d1b;white-space:nowrap">또 갈래</div></div>
+<div style="flex:1;height:56px;border-radius:18px;background:#31302d;display:flex;align-items:center;justify-content:center;font:700 15px/1 Pretendard,sans-serif;color:#faf9f7;white-space:nowrap">괜찮아</div>
+<div style="flex:1;height:56px;border-radius:18px;background:#31302d;display:flex;align-items:center;justify-content:center;font:700 15px/1 Pretendard,sans-serif;color:rgba(250,249,247,.55);white-space:nowrap">한 번은</div>
 </div>
-</div>
-</div>
-<div style="display:flex;align-items:center;gap:12px;padding:14px;background:#faf9f7;border:1px solid rgba(0,0,0,.07);border-radius:12px">
-<div style="display:flex">
-<div style="width:38px;height:38px;border-radius:6px;background:#e9e6e1;border:2px solid #faf9f7;background-image:repeating-linear-gradient(115deg,rgba(0,0,0,.028) 0 8px,rgba(0,0,0,0) 8px 16px)"></div>
-<div style="width:38px;height:38px;border-radius:6px;background:#e9e6e1;border:2px solid #faf9f7;margin-left:-14px;background-image:repeating-linear-gradient(115deg,rgba(0,0,0,.028) 0 8px,rgba(0,0,0,0) 8px 16px)"></div>
-<div style="width:38px;height:38px;border-radius:6px;background:#e9e6e1;border:2px solid #faf9f7;margin-left:-14px"></div>
-</div>
-<div style="flex:1;display:flex;flex-direction:column;gap:3px">
-<div style="font:500 13.5px/1.3 Pretendard,sans-serif;letter-spacing:-.02em;color:#22221f">어제 찍은 사진 4장</div>
-<div style="font:400 12px/1.3 Pretendard,sans-serif;color:#6d6b64">아직 스크랩 안 했어요</div>
-</div>
-<div style="font:500 12.5px/1 Pretendard,sans-serif;color:var(--accent,#4a6b52);padding:10px 12px;border:1px solid #cddbd0;border-radius:8px">확인</div>
-</div>
-</div>
+<div style="font:400 12.5px/1.6 Pretendard,sans-serif;color:rgba(250,249,247,.5)">또 갈래 버튼만 넓고 라임. 누르면 다음 사진으로 자동 이동. 숫자·평균은 만들지 않습니다.</div>
 </div>
 
-<div style="width:360px;box-sizing:border-box;background:#fff;border:1px solid rgba(0,0,0,.07);border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:14px">
-<div style="font:500 12px/1 Pretendard,sans-serif;color:#3f3e3a">상단바 · 탭바 · 빈 상태</div>
-<div style="width:320px;border:1px solid rgba(0,0,0,.07);border-radius:12px;overflow:hidden">
-<div style="height:52px;padding:0 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(0,0,0,.06)">
-<div style="display:flex;align-items:baseline;gap:8px"><div style="font:600 18px/1 Pretendard,sans-serif;letter-spacing:-.03em;color:#22221f">내 스크랩</div><div style="font:400 11.5px/1 'IBM Plex Mono',monospace;color:#9d9c96">124</div></div>
-<div style="display:flex;gap:8px"><div style="width:28px;height:28px;border-radius:6px;background:#f3f1ec"></div><div style="width:28px;height:28px;border-radius:6px;background:#f3f1ec"></div></div>
+<div style="width:376px;box-sizing:border-box;background:#1d1d1b;border:1px solid rgba(250,249,247,.08);border-radius:22px;padding:24px;display:flex;flex-direction:column;gap:12px">
+<div style="font:700 13px/1 Pretendard,sans-serif;color:#faf9f7">버튼</div>
+<div style="height:56px;border-radius:18px;background:#d4f53c;display:flex;align-items:center;justify-content:center;font:800 15.5px/1 Pretendard,sans-serif;letter-spacing:-.03em;color:#1d1d1b">내 근처 맛집 보기</div>
+<div style="display:flex;gap:8px">
+<div style="flex:1;height:52px;border-radius:18px;background:#faf9f7;display:flex;align-items:center;justify-content:center;font:700 14.5px/1 Pretendard,sans-serif;color:#1d1d1b;white-space:nowrap">길찾기</div>
+<div style="flex:1;height:52px;border-radius:18px;background:#31302d;display:flex;align-items:center;justify-content:center;font:700 14.5px/1 Pretendard,sans-serif;color:#faf9f7;white-space:nowrap">나중에</div>
+<div style="width:52px;height:52px;border-radius:18px;background:#31302d;display:flex;align-items:center;justify-content:center"><svg width="15" height="18" viewBox="0 0 15 18" style="display:block"><path d="M2.75 2.35h9.5v13.05l-4.75-3.45-4.75 3.45V2.35z" stroke="#faf9f7" stroke-width="1.8" fill="none" stroke-linejoin="round"></path></svg></div>
+<div style="width:52px;height:52px;border-radius:18px;background:#d4f53c;display:flex;align-items:center;justify-content:center"><svg width="15" height="18" viewBox="0 0 15 18" style="display:block"><path d="M2 2.6h11v13.2l-5.5-4-5.5 4V2.6z" fill="#1d1d1b"></path></svg></div>
 </div>
-<div style="padding:20px 14px;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center">
-<div style="width:44px;height:44px;border-radius:8px;border:1px dashed #cfcdc5"></div>
-<div style="font:500 13.5px/1.3 Pretendard,sans-serif;color:#22221f">아직 001번이 없어요</div>
-<div style="font:400 12px/1.5 Pretendard,sans-serif;color:#6d6b64;max-width:210px">사진첩을 연결하면 최근에 찍은 음식 사진이 자동으로 스크랩됩니다</div>
+<div style="font:400 12.5px/1.6 Pretendard,sans-serif;color:rgba(250,249,247,.5)">라임 = 주요 행동 1개 · 크림 = 보조 · 다크 = 그 외. 스크랩 아이콘: 선(기본) → 라임 채움(스크랩됨).</div>
 </div>
-<div style="height:56px;display:flex;align-items:center;justify-content:space-around;border-top:1px solid rgba(0,0,0,.06)">
-<div style="display:flex;flex-direction:column;align-items:center;gap:5px"><div style="width:18px;height:18px;border-radius:4px;background:#22221f"></div><div style="font:500 10.5px/1 Pretendard,sans-serif;color:#22221f">스크랩</div></div>
-<div style="display:flex;flex-direction:column;align-items:center;gap:5px"><div style="width:18px;height:18px;border-radius:4px;background:#cfcdc5"></div><div style="font:400 10.5px/1 Pretendard,sans-serif;color:#9d9c96">지도</div></div>
-<div style="display:flex;flex-direction:column;align-items:center;gap:5px"><div style="width:18px;height:18px;border-radius:4px;background:#cfcdc5"></div><div style="font:400 10.5px/1 Pretendard,sans-serif;color:#9d9c96">지역</div></div>
-<div style="display:flex;flex-direction:column;align-items:center;gap:5px"><div style="width:18px;height:18px;border-radius:4px;background:#cfcdc5"></div><div style="font:400 10.5px/1 Pretendard,sans-serif;color:#9d9c96">친구</div></div>
+
+<div style="width:376px;box-sizing:border-box;background:#1d1d1b;border:1px solid rgba(250,249,247,.08);border-radius:22px;padding:24px;display:flex;flex-direction:column;gap:14px">
+<div style="font:700 13px/1 Pretendard,sans-serif;color:#faf9f7">필터 칩</div>
+<div style="display:flex;gap:6px;flex-wrap:wrap">
+<div style="padding:10px 14px;border-radius:999px;background:#faf9f7;font:700 13px/1 Pretendard,sans-serif;color:#1d1d1b">걸어서</div>
+<div style="padding:10px 14px;border-radius:999px;background:#31302d;font:600 13px/1 Pretendard,sans-serif;color:#faf9f7">버스</div>
+<div style="padding:10px 14px;border-radius:999px;background:#31302d;font:600 13px/1 Pretendard,sans-serif;color:#faf9f7">자차</div>
+<div style="padding:10px 14px;border-radius:999px;background:#d4f53c;font:700 13px/1 Pretendard,sans-serif;color:#1d1d1b">또 갈래만</div>
+<div style="display:flex;align-items:center;gap:6px;padding:10px 14px;border-radius:999px;background:#31302d"><div style="width:8px;height:8px;border-radius:50%;background:#8fb098"></div><div style="font:600 13px/1 Pretendard,sans-serif;color:#faf9f7">동네친구들</div></div>
 </div>
+<div style="font:400 12.5px/1.6 Pretendard,sans-serif;color:rgba(250,249,247,.5)">선택됨 = 크림, “또 갈래만”이 켜지면 라임. 클럽 칩은 색 점으로만 구분.</div>
 </div>
-<div style="font:400 11.5px/1.6 Pretendard,sans-serif;color:#9d9c96">아이콘은 1.5px 선 · 24px 그리드. 실제 세트가 미확정이라 사각 placeholder로 뒀습니다.</div>
+
+<div style="width:376px;box-sizing:border-box;background:#1d1d1b;border:1px solid rgba(250,249,247,.08);border-radius:22px;padding:24px;display:flex;flex-direction:column;gap:14px">
+<div style="font:700 13px/1 Pretendard,sans-serif;color:#faf9f7">목록 행</div>
+<div style="display:flex;align-items:center;gap:14px">
+<div style="width:64px;height:64px;flex:none;border-radius:14px;background:#45423d"></div>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px">
+<div style="font:700 16px/1.2 Pretendard,sans-serif;letter-spacing:-.03em;color:#faf9f7;white-space:nowrap">망원동 김반장</div>
+<div style="font:400 12.5px/1 Pretendard,sans-serif;color:rgba(250,249,247,.55);white-space:nowrap">곱창 · 걸어서 4분</div>
+<div style="display:flex;align-items:center;gap:6px"><svg width="10" height="13" viewBox="0 0 26 34" style="display:block"><path d="M13 1.5C6.6 1.5 1.5 6.6 1.5 13c0 8.3 11.5 19.5 11.5 19.5S24.5 21.3 24.5 13C24.5 6.6 19.4 1.5 13 1.5z" fill="#d4f53c"></path></svg><div style="font:700 12.5px/1 Pretendard,sans-serif;color:#d4f53c;white-space:nowrap">3명 모두 또 갈래</div></div>
+</div>
+<svg width="15" height="18" viewBox="0 0 15 18" style="display:block;flex:none"><path d="M2.75 2.35h9.5v13.05l-4.75-3.45-4.75 3.45V2.35z" stroke="rgba(250,249,247,.55)" stroke-width="1.8" fill="none" stroke-linejoin="round"></path></svg>
+</div>
+<div style="font:400 12.5px/1.6 Pretendard,sans-serif;color:rgba(250,249,247,.5)">검증 문장은 라임 글자 + 작은 핀. 구분선 없이 행 간격 14로만 나눕니다.</div>
+</div>
+
+<div style="width:376px;box-sizing:border-box;background:#1d1d1b;border:1px solid rgba(250,249,247,.08);border-radius:22px;padding:24px;display:flex;flex-direction:column;gap:14px">
+<div style="font:700 13px/1 Pretendard,sans-serif;color:#faf9f7">확신 블록 — “N명 중 N명”</div>
+<div style="border-radius:22px;background:#d4f53c;padding:18px;display:flex;align-items:center;gap:14px">
+<div style="display:flex;flex:none"><div style="width:32px;height:32px;border-radius:50%;background:#8fb098;border:2.5px solid #d4f53c"></div><div style="width:32px;height:32px;border-radius:50%;background:#d1b98a;border:2.5px solid #d4f53c;margin-left:-11px"></div><div style="width:32px;height:32px;border-radius:50%;background:#8fb3c9;border:2.5px solid #d4f53c;margin-left:-11px"></div></div>
+<div style="display:flex;flex-direction:column;gap:4px;min-width:0"><div style="font:800 21px/1.15 Pretendard,sans-serif;letter-spacing:-.04em;color:#1d1d1b;white-space:nowrap">3명 중 3명이 또 갈래</div><div style="font:500 12.5px/1 Pretendard,sans-serif;color:rgba(29,29,27,.7);white-space:nowrap">클럽에서 만장일치는 세 곳뿐</div></div>
+</div>
+<div style="font:400 12.5px/1.6 Pretendard,sans-serif;color:rgba(250,249,247,.5)">상세 화면에서 가장 큰 라임 면적. 이 앱이 주는 확신을 한 덩어리로 보여줍니다.</div>
 </div>
 
 </div>
 </section>
 
-<section style="padding:44px 0 0;display:flex;flex-direction:column;gap:18px;border-top:1px solid rgba(0,0,0,.1);margin-top:26px">
-<div style="font:500 11px/1 'IBM Plex Mono',monospace;letter-spacing:.08em;color:#9d9c96">06 — 사진 취급 · 쓰지 않는 것</div>
-<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
-<div style="background:#fff;border:1px solid rgba(0,0,0,.07);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:7px">
-<div style="font:500 13.5px/1.3 Pretendard,sans-serif;color:#22221f">사진 규격</div>
-<div style="font:400 12.5px/1.65 Pretendard,sans-serif;color:#6d6b64">목록 썸네일 52·32(정사각, r8/6) · 상세 격자 1:1 · 앨범 상세만 원본비. 목록에서 사진 위 텍스트 금지, 상세에서만 흰 92% 칩.</div>
+<section style="display:flex;flex-direction:column;gap:18px">
+<div style="font:700 13px/1 Pretendard,sans-serif;color:#d4f53c;white-space:nowrap">06 쓰지 않는 것</div>
+<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px">
+<div style="background:#1d1d1b;border:1px solid rgba(250,249,247,.08);border-radius:20px;padding:20px;display:flex;flex-direction:column;gap:8px"><div style="font:700 15px/1.3 Pretendard,sans-serif;color:#faf9f7">별점 · 평균 점수</div><div style="font:400 13px/1.65 Pretendard,sans-serif;color:rgba(250,249,247,.55)">3단계 라벨과 핀 모양으로만.</div></div>
+<div style="background:#1d1d1b;border:1px solid rgba(250,249,247,.08);border-radius:20px;padding:20px;display:flex;flex-direction:column;gap:8px"><div style="font:700 15px/1.3 Pretendard,sans-serif;color:#faf9f7">배달앱 어휘</div><div style="font:400 13px/1.65 Pretendard,sans-serif;color:rgba(250,249,247,.55)">가격·할인 리본·쿠폰·빨강+노랑 조합.</div></div>
+<div style="background:#1d1d1b;border:1px solid rgba(250,249,247,.08);border-radius:20px;padding:20px;display:flex;flex-direction:column;gap:8px"><div style="font:700 15px/1.3 Pretendard,sans-serif;color:#faf9f7">라임 남용</div><div style="font:400 13px/1.65 Pretendard,sans-serif;color:rgba(250,249,247,.55)">한 화면에 라임 면은 2개까지. 장식·배경·아이콘 색으로 쓰지 않습니다.</div></div>
 </div>
-<div style="background:#fff;border:1px solid rgba(0,0,0,.07);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:7px">
-<div style="font:500 13.5px/1.3 Pretendard,sans-serif;color:#22221f">별점 · 평균</div>
-<div style="font:400 12.5px/1.65 Pretendard,sans-serif;color:#6d6b64">3단계 라벨과 점 하나로만. 4.3점 같은 표현을 만들지 않습니다.</div>
-</div>
-<div style="background:#fff;border:1px solid rgba(0,0,0,.07);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:7px">
-<div style="font:500 13.5px/1.3 Pretendard,sans-serif;color:#22221f">배달앱 어휘</div>
-<div style="font:400 12.5px/1.65 Pretendard,sans-serif;color:#6d6b64">가격·할인 리본·쿠폰·빨간 뱃지·“지금 주문”. 노랑+빨강 조합도 금지.</div>
-</div>
-<div style="background:#fff;border:1px solid rgba(0,0,0,.07);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:7px">
-<div style="font:500 13.5px/1.3 Pretendard,sans-serif;color:#22221f">종이 흉내 · 대문자</div>
-<div style="font:400 12.5px/1.65 Pretendard,sans-serif;color:#6d6b64">질감 이미지·도장·손글씨 서체·두꺼운 오프셋 그림자 금지. 라벨은 모두 한국어, 등폭은 번호·좌표에만.</div>
-</div>
-</div>
-<div style="font:400 12.5px/1.7 Pretendard,sans-serif;color:#9d9c96;padding-top:6px">다음 단계 — 화면을 하나씩 붙입니다. 순서 제안: ① 내 스크랩(홈) ② 지도 + 시트 ③ 사진 자동 등록 플로우 ④ 지역 컬렉션 ⑤ 친구 색인. 어떤 화면부터 볼지 알려주세요.</div>
 </section>
 
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props="{&quot;accent&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#4a6b52&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;options&quot;:[&quot;#4a6b52&quot;,&quot;#3d5a6b&quot;,&quot;#6b5a3d&quot;,&quot;#22221f&quot;],&quot;section&quot;:&quot;강조색&quot;}}">
-class Component extends DCLogic {
-  renderVals() {
-    return { accent: this.props.accent ?? "#4a6b52" };
-  }
-}
-</script>
+<script type="text/x-dc" data-dc-script data-props="{}"></script>
 </body>
 </html>
