@@ -1,0 +1,20 @@
+# 비밀값
+.env
+.env.*
+!.env.example
+api/src/main/resources/application.yml
+api/src/main/resources/application-*.yml
+!api/src/main/resources/application-example.yml
+
+# api (Gradle)
+api/.gradle/
+api/build/
+api/out/
+api/bin/
+!api/gradle/wrapper/gradle-wrapper.jar
+
+# IDE / OS
+.idea/
+*.iml
+.vscode/
+.DS_Store

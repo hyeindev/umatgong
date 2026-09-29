@@ -1,0 +1,40 @@
+# 이 파일을 같은 폴더에 application.yml로 복사해서 쓴다.
+#   cp application-example.yml application.yml
+# application.yml은 커밋하지 않는다(.gitignore). 실제 값은 파일에 적지 말고 환경변수로 넣는다.
+
+spring:
+  application:
+    name: umatgong-api
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/umatgong}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  jpa:
+    open-in-view: false
+    hibernate:
+      # 스키마는 Flyway만 바꾼다. Hibernate는 엔티티와 어긋나는지 검증만 한다.
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+        default_batch_fetch_size: 100
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  jackson:
+    time-zone: UTC
+    serialization:
+      write-dates-as-timestamps: false
+
+umatgong:
+  jwt:
+    # 32바이트(256비트) 이상. 예: openssl rand -base64 48
+    secret: ${JWT_SECRET}
+    access-token-validity: 30m
+  cors:
+    # 쉼표로 여러 개. Expo 웹 개발 서버 기본 포트가 8081이다.
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:8081}
+    allow-credentials: false
+  kakao:
+    rest-api-key: ${KAKAO_REST_API_KEY}
