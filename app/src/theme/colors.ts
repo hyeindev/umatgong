@@ -9,7 +9,11 @@ const palette = {
   ink700: '#31302d',
   ink600: '#3a3833',
   ink500: '#45423d',
+  stone200: '#d8d4ce',
+  stone300: '#c2bcb3',
+  stone350: '#ada69b',
   stone400: '#6d6b64',
+  sage800: '#3a5641',
   cream: '#faf9f7',
   lime: '#d4f53c',
   red: '#e5484d',
@@ -57,6 +61,11 @@ export const colors = {
       primary: palette.ink900,
       secondary: palette.ink500,
       tertiary: palette.stone400,
+      /**
+       * 크림 카드 위의 “또 갈래” 검증 문장. 라임 글자는 크림 위에서 읽히지 않으므로
+       * 세이지를 어둡게 내린 색을 쓴다. 어두운 바탕 위에서는 accent(라임)를 쓴다.
+       */
+      again: palette.sage800,
     },
   },
 
@@ -85,6 +94,14 @@ export const colors = {
     onKakao: 'rgba(0, 0, 0, 0.85)',
     /** 카카오 말풍선 심볼 */
     kakaoSymbol: palette.black,
+  },
+
+  /**
+   * 실제 사람이 아닌 자리표시 아바타 (로그인 화면 예시 카드 등). 겹쳐 놓았을 때 구분되도록 3단계.
+   * 크림 카드 위에서 쓴다. 클럽 색이 아니다.
+   */
+  placeholderAvatar: {
+    onCream: [palette.stone200, palette.stone300, palette.stone350],
   },
 
   pin: {
