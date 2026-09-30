@@ -55,3 +55,13 @@ export const shape = {
   /** 칩, 스티커 라벨, 배지 */
   pill: radius.full,
 } as const;
+
+/** 반복되는 요소 크기 */
+export const size = {
+  /** 주요 버튼 높이 (디자인 시스템 v2 버튼 52~58) */
+  button: 56,
+  avatar: {
+    sm: 36,
+    lg: 72,
+  },
+} as const;

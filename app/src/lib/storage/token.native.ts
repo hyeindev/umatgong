@@ -1,12 +1,15 @@
+import * as SecureStore from 'expo-secure-store';
+
+import { createSerialQueue, parseStoredSession } from './parse';
 import type { TokenStorage } from './token.types';
 
-// 아직 구현 전이다. 조용히 null을 돌려주면 로그인이 풀린 것처럼 보이므로 호출 즉시 실패시킨다.
-const notImplemented = (): never => {
-  throw new Error('tokenStorage is not implemented yet');
-};
+// 네이티브는 SecureStore(iOS 키체인, Android Keystore)에 둔다.
+const KEY = 'umatgong.session';
 
 export const tokenStorage: TokenStorage = {
-  get: async () => notImplemented(),
-  set: async () => notImplemented(),
-  clear: async () => notImplemented(),
+  load: async () => parseStoredSession(await SecureStore.getItemAsync(KEY)),
+  save: (session) => SecureStore.setItemAsync(KEY, JSON.stringify(session)),
+  clear: () => SecureStore.deleteItemAsync(KEY),
+  // 앱 프로세스는 하나뿐이므로 실행 안에서만 순서를 지키면 된다
+  exclusive: createSerialQueue(),
 };
