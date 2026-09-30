@@ -13,6 +13,7 @@
 #   JWT_ACCESS_TOKEN_VALIDITY     — 초 단위 (기본 1800)
 #   JWT_REFRESH_TOKEN_VALIDITY    — 초 단위 (기본 1209600 = 14일)
 #   KAKAO_REST_API_KEY
+#   KAKAO_APP_ID                  — 카카오 개발자 콘솔 [앱 설정 > 앱 키]의 앱 ID. 없으면 기동하지 않는다
 #   CORS_ALLOWED_ORIGINS          — 쉼표로 여러 개
 
 spring:
@@ -53,3 +54,5 @@ umatgong:
     allow-credentials: false
   kakao:
     rest-api-key: ${KAKAO_REST_API_KEY:}
+    # 로그인 토큰이 우리 앱에서 발급된 것인지 확인한다. 비어 있으면 기동 시 실패한다.
+    app-id: ${KAKAO_APP_ID:}
