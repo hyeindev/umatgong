@@ -1,14 +1,27 @@
-# 이 파일을 같은 폴더에 application.yml로 복사해서 쓴다.
+# application.yml 템플릿. 이 파일을 같은 폴더에 application.yml로 복사해서 쓴다.
 #   cp application-example.yml application.yml
-# application.yml은 커밋하지 않는다(.gitignore). 실제 값은 파일에 적지 말고 환경변수로 넣는다.
+# application.yml은 커밋하지 않는다(.gitignore). 여기에는 값이 아니라 환경변수 자리만 둔다.
+#
+# 설정이 적용되는 순서 (뒤가 이긴다)
+#   1. application.yml          — 공통 구조. 비밀값은 환경변수로만 받는다
+#   2. application-local.yml    — 로컬 개발값 (local 프로필, 커밋 안 함)
+#   3. 환경변수                  — 배포 환경. 모든 ${...} 자리를 덮어쓴다
+#
+# 배포 시 필요한 환경변수
+#   DB_URL, DB_USERNAME, DB_PASSWORD
+#   JWT_SECRET                    — 32바이트(256비트) 이상. 예: openssl rand -base64 64
+#   JWT_ACCESS_TOKEN_VALIDITY     — 초 단위 (기본 1800)
+#   JWT_REFRESH_TOKEN_VALIDITY    — 초 단위 (기본 1209600 = 14일)
+#   KAKAO_REST_API_KEY
+#   CORS_ALLOWED_ORIGINS          — 쉼표로 여러 개
 
 spring:
   application:
     name: umatgong-api
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/umatgong}
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
+    username: ${DB_USERNAME:}
+    password: ${DB_PASSWORD:}
   jpa:
     open-in-view: false
     hibernate:
@@ -29,12 +42,14 @@ spring:
 
 umatgong:
   jwt:
-    # 32바이트(256비트) 이상. 예: openssl rand -base64 48
-    secret: ${JWT_SECRET}
-    access-token-validity: 30m
+    # 비어 있으면 기동 시 WeakKeyException으로 실패한다. 의도된 동작.
+    secret: ${JWT_SECRET:}
+    # 단위 없는 숫자는 초
+    access-token-validity: ${JWT_ACCESS_TOKEN_VALIDITY:1800}
+    refresh-token-validity: ${JWT_REFRESH_TOKEN_VALIDITY:1209600}
   cors:
-    # 쉼표로 여러 개. Expo 웹 개발 서버 기본 포트가 8081이다.
+    # Expo 웹 개발 서버 기본 포트가 8081이다.
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:8081}
     allow-credentials: false
   kakao:
-    rest-api-key: ${KAKAO_REST_API_KEY}
+    rest-api-key: ${KAKAO_REST_API_KEY:}
