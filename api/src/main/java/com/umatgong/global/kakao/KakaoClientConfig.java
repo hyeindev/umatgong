@@ -14,6 +14,7 @@ public class KakaoClientConfig {
 
 	private static final String KAPI_BASE_URL = "https://kapi.kakao.com";
 	private static final String DAPI_BASE_URL = "https://dapi.kakao.com";
+	private static final String KAUTH_BASE_URL = "https://kauth.kakao.com";
 
 	/** 사용자 API (로그인 검증). KakaoAuthClient가 쓴다. */
 	@Bean
@@ -21,9 +22,15 @@ public class KakaoClientConfig {
 		return builder.baseUrl(KAPI_BASE_URL).requestFactory(requestFactory()).build();
 	}
 
+	/** 인증 서버 (웹 로그인의 인가 코드 → 토큰 교환). KakaoAuthClient가 쓴다. */
+	@Bean
+	public RestClient kakaoOAuthRestClient(RestClient.Builder builder) {
+		return builder.baseUrl(KAUTH_BASE_URL).requestFactory(requestFactory()).build();
+	}
+
 	/**
 	 * 로컬 API (장소 검색). KakaoLocalClient가 쓴다.
-	 * REST API 키는 여기서 기본 헤더로 넣지 않는다. 키를 만지는 곳을 KakaoLocalClient 하나로 두기 위해서다.
+	 * REST API 키는 여기서 기본 헤더로 넣지 않는다. 키는 요청을 만드는 클라이언트 클래스 안에서만 다룬다.
 	 */
 	@Bean
 	public RestClient kakaoLocalRestClient(RestClient.Builder builder) {

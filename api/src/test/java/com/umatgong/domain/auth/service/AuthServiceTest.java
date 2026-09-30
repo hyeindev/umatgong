@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -21,6 +22,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -74,6 +76,57 @@ class AuthServiceTest {
 		assertThat(jwtProvider.parseAccessToken(response.tokens().accessToken())).isEqualTo(7L);
 		assertThat(response.tokens().accessTokenExpiresIn()).isEqualTo(1800);
 		assertThat(response.tokens().refreshTokenExpiresIn()).isEqualTo(1_209_600);
+	}
+
+	@Test
+	void 웹_로그인은_인가_코드를_토큰으로_바꾼_뒤_네이티브와_같은_경로로_로그인한다() {
+		given(kakaoAuthClient.exchangeCode("auth-code", "https://umatgong.test/auth/kakao/callback"))
+			.willReturn("kakao-token-from-code");
+		given(kakaoAuthClient.verifyAndFetchUser("kakao-token-from-code"))
+			.willReturn(new KakaoUserInfo(1234L, "지현", null));
+		given(userRepository.findByKakaoId(1234L)).willReturn(Optional.empty());
+
+		LoginResponse response = authService.loginWithKakaoCode("auth-code", "https://umatgong.test/auth/kakao/callback");
+
+		assertThat(response.newUser()).isTrue();
+		assertThat(response.user().id()).isEqualTo(7L);
+		assertThat(jwtProvider.parseAccessToken(response.tokens().accessToken())).isEqualTo(7L);
+		// 교환으로 받은 토큰도 네이티브 토큰과 똑같이 앱 확인·사용자 조회를 거친다.
+		InOrder order = inOrder(kakaoAuthClient);
+		order.verify(kakaoAuthClient).exchangeCode("auth-code", "https://umatgong.test/auth/kakao/callback");
+		order.verify(kakaoAuthClient).verifyAndFetchUser("kakao-token-from-code");
+		verify(refreshTokenRepository).save(any(RefreshToken.class));
+	}
+
+	@Test
+	void 웹과_네이티브로_같은_카카오_회원이_로그인하면_같은_사용자다() {
+		User existing = withId(User.signUpWithKakao(1234L, "지현", null), 7L);
+		given(userRepository.findByKakaoId(1234L)).willReturn(Optional.of(existing));
+		given(kakaoAuthClient.exchangeCode(anyString(), anyString())).willReturn("web-token");
+		given(kakaoAuthClient.verifyAndFetchUser("web-token")).willReturn(new KakaoUserInfo(1234L, "지현", null));
+		given(kakaoAuthClient.verifyAndFetchUser("native-token")).willReturn(new KakaoUserInfo(1234L, "지현", null));
+
+		LoginResponse web = authService.loginWithKakaoCode("auth-code", "https://umatgong.test/auth/kakao/callback");
+		LoginResponse nativeApp = authService.loginWithKakao("native-token");
+
+		assertThat(web.user().id()).isEqualTo(7L).isEqualTo(nativeApp.user().id());
+		assertThat(web.newUser()).isFalse();
+		assertThat(nativeApp.newUser()).isFalse();
+		verify(userRepository, never()).save(any(User.class));
+	}
+
+	@Test
+	void 코드_교환이_거부되면_사용자_조회도_가입도_하지_않는다() {
+		given(kakaoAuthClient.exchangeCode("auth-code", "https://evil.test/cb"))
+			.willThrow(new BusinessException(ErrorCode.KAKAO_REDIRECT_URI_NOT_ALLOWED));
+
+		assertThatThrownBy(() -> authService.loginWithKakaoCode("auth-code", "https://evil.test/cb"))
+			.isInstanceOf(BusinessException.class)
+			.extracting(e -> ((BusinessException) e).getErrorCode())
+			.isEqualTo(ErrorCode.KAKAO_REDIRECT_URI_NOT_ALLOWED);
+		verify(kakaoAuthClient, never()).verifyAndFetchUser(anyString());
+		verify(userRepository, never()).findByKakaoId(any());
+		verify(refreshTokenRepository, never()).save(any(RefreshToken.class));
 	}
 
 	@Test

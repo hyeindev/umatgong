@@ -25,7 +25,10 @@ public enum ErrorCode {
 
 	// 인증
 	// 카카오 액세스 토큰이 만료·위조됐거나 우리 앱에서 발급한 토큰이 아니다. 카카오 SDK로 다시 로그인한다.
+	// 웹 로그인의 인가 코드가 만료·재사용됐거나 redirectUri가 authorize 때와 다를 때도 이 코드다.
 	KAKAO_INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "카카오 인증에 실패했습니다."),
+	// 웹 로그인의 redirectUri가 서버 허용 목록에 없다. 오픈 리다이렉트를 막기 위해 카카오를 부르지 않고 거부한다.
+	KAKAO_REDIRECT_URI_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "허용되지 않은 로그인 리다이렉트 주소입니다."),
 	KAKAO_UNAVAILABLE(HttpStatus.BAD_GATEWAY, "카카오 서버와 통신하지 못했습니다. 잠시 후 다시 시도해 주세요."),
 	// 리프레시 토큰이 없거나 만료·폐기됐다. 프론트는 갱신을 멈추고 로그인 화면으로 보낸다.
 	INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "다시 로그인해 주세요.");

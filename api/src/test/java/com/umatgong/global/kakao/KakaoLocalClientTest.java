@@ -46,7 +46,7 @@ class KakaoLocalClientTest {
 				.withConnectTimeout(Duration.ofSeconds(1))
 				.withReadTimeout(Duration.ofMillis(500))))
 			.build();
-		client = new KakaoLocalClient(restClient, new KakaoProperties("test-rest-key", 1L));
+		client = new KakaoLocalClient(restClient, new KakaoProperties("test-rest-key", 1L, null, List.of()));
 	}
 
 	@AfterEach
@@ -174,7 +174,7 @@ class KakaoLocalClientTest {
 
 	@Test
 	void REST_API_키가_없으면_만들어지지_않는다() {
-		assertThatThrownBy(() -> new KakaoLocalClient(RestClient.create(), new KakaoProperties(" ", 1L)))
+		assertThatThrownBy(() -> new KakaoLocalClient(RestClient.create(), new KakaoProperties(" ", 1L, null, List.of())))
 			.isInstanceOf(IllegalStateException.class);
 	}
 

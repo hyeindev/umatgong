@@ -66,7 +66,7 @@ Authorization: Bearer {accessToken}
 | `INVALID_TOKEN` | 액세스 토큰 위조·형식 오류 | 갱신 시도 1회, 실패하면 로그인 화면 |
 | `UNAUTHORIZED` | 토큰 없음 | 로그인 화면 |
 | `INVALID_REFRESH_TOKEN` | 리프레시 토큰 무효 | **갱신을 멈추고** 저장된 토큰을 지운 뒤 로그인 화면 |
-| `KAKAO_INVALID_TOKEN` | 카카오 토큰 무효 | 카카오 SDK로 다시 로그인 |
+| `KAKAO_INVALID_TOKEN` | 카카오 토큰·인가 코드 무효 | 카카오 SDK로 다시 로그인 |
 
 > **갱신 요청은 한 번에 하나만 보낸다.** 리프레시 토큰은 한 번 쓰면 폐기된다(회전).
 > 같은 리프레시 토큰으로 갱신이 두 번 가면 두 번째는 재사용으로 판단돼 그 기기의 로그인이 끊긴다.
@@ -80,7 +80,8 @@ Authorization: Bearer {accessToken}
 | `UNAUTHORIZED` | 401 | 인증 필요 |
 | `INVALID_TOKEN` | 401 | 액세스 토큰이 유효하지 않음 |
 | `EXPIRED_TOKEN` | 401 | 액세스 토큰 만료 |
-| `KAKAO_INVALID_TOKEN` | 401 | 카카오 토큰이 무효이거나 우리 앱에서 발급된 토큰이 아님 |
+| `KAKAO_INVALID_TOKEN` | 401 | 카카오 토큰이 무효이거나 우리 앱에서 발급된 토큰이 아님. 웹 로그인에서는 인가 코드 만료·재사용, redirectUri 불일치 |
+| `KAKAO_REDIRECT_URI_NOT_ALLOWED` | 400 | 웹 로그인의 `redirectUri`가 서버 허용 목록에 없음 |
 | `INVALID_REFRESH_TOKEN` | 401 | 리프레시 토큰이 없거나 만료·폐기됨 |
 | `FORBIDDEN` | 403 | 권한 없음 |
 | `NOT_FOUND` | 404 | 없는 경로·리소스 |
@@ -92,9 +93,19 @@ Authorization: Bearer {accessToken}
 
 ## 2. 인증 (`/api/auth`)
 
-세 API 모두 **액세스 토큰 없이** 호출한다.
+네 API 모두 **액세스 토큰 없이** 호출한다.
 
-### POST /api/auth/kakao — 카카오 로그인
+카카오 로그인은 두 경로다. 어느 경로로 로그인해도 같은 카카오 회원은 같은 사용자이고, 응답도 같다.
+
+| 클라이언트 | API | 보내는 값 |
+|---|---|---|
+| 네이티브 앱 | `POST /api/auth/kakao` | 카카오 네이티브 SDK가 준 액세스 토큰 |
+| 웹 | `POST /api/auth/kakao/code` | 카카오 JS SDK `authorize`가 리다이렉트로 준 인가 코드 |
+
+> 웹은 카카오 JS SDK가 액세스 토큰을 직접 주지 않고, 코드를 토큰으로 바꾸려면 REST API 키가 필요하다.
+> REST API 키는 서버에만 두므로 교환은 서버가 한다.
+
+### POST /api/auth/kakao — 카카오 로그인 (네이티브)
 
 클라이언트가 카카오 SDK로 로그인해 받은 **카카오 액세스 토큰**을 보내면, 서버가 카카오에 검증한 뒤
 우리 서비스의 토큰을 발급한다. 처음 로그인한 사용자는 이때 가입된다.
@@ -153,6 +164,44 @@ Authorization: Bearer {accessToken}
 |---|---|---|
 | 400 | `INVALID_INPUT` | `kakaoAccessToken`이 비어 있음 |
 | 401 | `KAKAO_INVALID_TOKEN` | 카카오 토큰 만료·위조, 또는 다른 앱에서 발급된 토큰 |
+| 502 | `KAKAO_UNAVAILABLE` | 카카오 서버 응답 없음 |
+
+### POST /api/auth/kakao/code — 카카오 로그인 (웹)
+
+카카오 JS SDK `Kakao.Auth.authorize({ redirectUri })`가 리다이렉트로 돌려준 **인가 코드**를 보내면,
+서버가 카카오 인증 서버에서 코드를 카카오 액세스 토큰으로 바꾼 뒤 `POST /api/auth/kakao`와 같은 과정으로
+로그인한다. 가입·프로필 갱신·동시 호출 처리도 같다.
+
+- `redirectUri`는 **authorize에 보낸 값과 문자열까지 같아야 한다.** 서버는 받은 값을 그대로 카카오에 넘긴다
+- `redirectUri`는 서버 설정(`KAKAO_ALLOWED_REDIRECT_URIS`)의 허용 목록에 있어야 한다. 비교는 완전 일치다
+  (끝의 `/`, 대소문자, 쿼리가 달라도 거부). 목록에 없으면 카카오를 부르지 않고 거부한다
+- 인가 코드는 한 번만 쓸 수 있다. 같은 코드로 두 번 보내면 두 번째는 `KAKAO_INVALID_TOKEN`이다
+- 인가 코드와 카카오 토큰은 저장하지 않는다
+
+요청
+
+```json
+{
+  "code": "카카오가 리다이렉트로 준 인가 코드",
+  "redirectUri": "https://umatgong.app/auth/kakao/callback"
+}
+```
+
+| 필드 | 타입 | 필수 | 설명 |
+|---|---|---|---|
+| `code` | string | O | 인가 코드. 최대 1024자 |
+| `redirectUri` | string | O | authorize에 보낸 redirectUri. 최대 2048자 |
+
+응답 `200`: `POST /api/auth/kakao`와 같다 (`accessToken`, `refreshToken`, `user`, `newUser` …).
+
+에러
+
+| HTTP | code | 상황 |
+|---|---|---|
+| 400 | `INVALID_INPUT` | `code`·`redirectUri`가 비어 있거나 너무 김 |
+| 400 | `KAKAO_REDIRECT_URI_NOT_ALLOWED` | `redirectUri`가 서버 허용 목록에 없음 |
+| 401 | `KAKAO_INVALID_TOKEN` | 인가 코드 만료·재사용, authorize 때와 `redirectUri`가 다름 |
+| 500 | `INTERNAL_ERROR` | 카카오가 서버의 REST API 키·Client Secret을 거부 (서버 설정 오류) |
 | 502 | `KAKAO_UNAVAILABLE` | 카카오 서버 응답 없음 |
 
 ### POST /api/auth/refresh — 토큰 갱신

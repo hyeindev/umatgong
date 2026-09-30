@@ -22,7 +22,7 @@ import com.umatgong.global.geo.Coordinate;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * 카카오 로컬 API(장소 검색) 전담. 카카오 REST API 키를 쓰는 곳은 이 클래스뿐이다.
+ * 카카오 로컬 API(장소 검색) 전담. REST API 키는 이 클래스와 KakaoAuthClient(웹 로그인 코드 교환)만 쓴다.
  *
  * <p><b>카카오는 x가 경도, y가 위도다.</b> 이 클래스 밖은 전부 {@link Coordinate}(lat, lng)로만 다루고,
  * x/y 변환은 요청을 만들 때({@link #withCenter})와 응답을 읽을 때({@link #toPlace}) 딱 두 곳에서만 한다.
