@@ -12,7 +12,7 @@
 #   JWT_SECRET                    — 32바이트(256비트) 이상. 예: openssl rand -base64 64
 #   JWT_ACCESS_TOKEN_VALIDITY     — 초 단위 (기본 1800)
 #   JWT_REFRESH_TOKEN_VALIDITY    — 초 단위 (기본 1209600 = 14일)
-#   KAKAO_REST_API_KEY
+#   KAKAO_REST_API_KEY            — 장소 검색(로컬 API)용. 없으면 기동하지 않는다
 #   KAKAO_APP_ID                  — 카카오 개발자 콘솔 [앱 설정 > 앱 키]의 앱 ID. 없으면 기동하지 않는다
 #   CORS_ALLOWED_ORIGINS          — 쉼표로 여러 개
 

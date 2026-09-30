@@ -32,6 +32,16 @@ class CoordinateTest {
 	}
 
 	@Test
+	void 두_좌표_사이_거리를_미터로_계산한다() {
+		// 서울시청 ↔ 광화문: 약 1.1km
+		Coordinate cityHall = Coordinate.of(37.5665, 126.9780);
+		Coordinate gwanghwamun = Coordinate.of(37.5759, 126.9769);
+
+		assertThat(cityHall.distanceMetersTo(gwanghwamun)).isBetween(1000.0, 1150.0);
+		assertThat(cityHall.distanceMetersTo(cityHall)).isZero();
+	}
+
+	@Test
 	void 같은_위경도면_같은_좌표다() {
 		assertThat(Coordinate.of(37.5, 127.0)).isEqualTo(Coordinate.of(37.5, 127.0));
 	}
