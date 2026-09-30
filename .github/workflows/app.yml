@@ -1,0 +1,58 @@
+name: app
+
+on:
+  push:
+    branches: [main]
+    paths: ['app/**']
+  pull_request:
+    paths: ['app/**']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: app-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    defaults:
+      run:
+        working-directory: app
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Expo 프로젝트를 만들기 전(package.json 없음)에는 검사할 것이 없으므로 건너뛴다.
+      # package.json은 있는데 lock 파일이 없으면 npm ci가 실패하도록 그대로 진행한다.
+      - name: Detect project
+        id: detect
+        run: |
+          if [ -f package.json ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::app/package.json이 없어 검사를 건너뜁니다 (Expo 프로젝트 초기화 전)"
+          fi
+
+      - uses: actions/setup-node@v4
+        if: steps.detect.outputs.ready == 'true'
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: Install
+        if: steps.detect.outputs.ready == 'true'
+        run: npm ci
+
+      - name: Typecheck
+        if: steps.detect.outputs.ready == 'true'
+        run: npm run typecheck
+
+      - name: Lint
+        if: steps.detect.outputs.ready == 'true'
+        run: npm run lint
