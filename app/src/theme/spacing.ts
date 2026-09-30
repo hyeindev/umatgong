@@ -35,21 +35,23 @@ export const radius = {
   md: 12,
   lg: 16,
   xl: 18,
-  '2xl': 22,
-  '3xl': 28,
+  '2xl': 24,
   full: 999,
 } as const;
 
-/** 쓰임새별 radius (디자인 시스템 v2 “라운드”) */
+/**
+ * 쓰임새별 radius (디자인 시스템 v2 “라운드”: 12 썸네일 · 18 버튼·카드 · 24 시트 · 999 칩).
+ * 화면 시안에는 20·22·28이 섞여 있지만 시스템에서 벗어난 값이므로 따르지 않는다.
+ */
 export const shape = {
   /** 목록·후보 썸네일 */
   thumbnail: radius.md,
   /** 스티커(폴라로이드) 카드 */
   stickerCard: radius.lg,
   button: radius.xl,
-  card: radius['2xl'],
+  card: radius.xl,
   /** 바텀 시트 위쪽 모서리 */
-  sheet: radius['3xl'],
+  sheet: radius['2xl'],
   /** 칩, 스티커 라벨, 배지 */
   pill: radius.full,
 } as const;
