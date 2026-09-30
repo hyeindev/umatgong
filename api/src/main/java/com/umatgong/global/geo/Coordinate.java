@@ -23,6 +23,7 @@ import lombok.NoArgsConstructor;
 public class Coordinate {
 
 	private static final int WGS84 = 4326;
+	private static final double EARTH_RADIUS_METERS = 6_371_008.8;
 	private static final GeometryFactory GEOMETRY_FACTORY = new GeometryFactory(new PrecisionModel(), WGS84);
 
 	@JdbcTypeCode(SqlTypes.GEOGRAPHY)
@@ -50,6 +51,16 @@ public class Coordinate {
 
 	public double lng() {
 		return point.getX();
+	}
+
+	/** 두 좌표 사이의 지표면 거리(미터, 하버사인). 목록의 "여기서 200m" 같은 표시용이다. */
+	public double distanceMetersTo(Coordinate other) {
+		double dLat = Math.toRadians(other.lat() - lat());
+		double dLng = Math.toRadians(other.lng() - lng());
+		double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+			+ Math.cos(Math.toRadians(lat())) * Math.cos(Math.toRadians(other.lat()))
+			* Math.sin(dLng / 2) * Math.sin(dLng / 2);
+		return 2 * EARTH_RADIUS_METERS * Math.asin(Math.sqrt(a));
 	}
 
 	Point toPoint() {
