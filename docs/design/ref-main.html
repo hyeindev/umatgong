@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>우맛공 · 전국 지도 (첫 화면)</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.min.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap">
+<script src="https://unpkg.com/d3@7.9.0/dist/d3.min.js" integrity="sha384-CjloA8y00+1SDAUkjs099PVfnY2KmDC2BZnws9kh8D/lX1s46w6EPhpXdqMfjK6i" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/topojson-client@3.1.0/dist/topojson-client.min.js" integrity="sha384-Ukv1p/xTma6P4/2bY5KzWBw+ydSpXmhCMtyciIQVDJ1RmOxtCYNMF1uXT9T63H67" crossorigin="anonymous"></script>
+<style>
+  body{margin:0;background:#121211;font-family:Pretendard,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  a{color:#d4f53c;text-decoration:none}a:hover{color:#faf9f7}
+  .wrap{padding:44px 48px 90px;display:flex;flex-direction:column;gap:26px}
+  .frame{width:390px;height:844px;box-sizing:border-box;border:0;border-radius:26px;overflow:hidden;position:relative;background:#1d1d1b;box-shadow:0 1px 2px rgba(34,34,31,.04),0 18px 40px -26px rgba(34,34,31,.35)}
+  .badge{font:700 11px/1 Pretendard,sans-serif;padding:4px 9px;background:#faf9f7;color:#1d1d1b;border-radius:999px}
+  .cap{font:500 12px/1 Pretendard,sans-serif;color:rgba(250,249,247,.55);white-space:nowrap}
+  .chip{display:flex;align-items:center;gap:6px;padding:10px 13px;border-radius:999px;background:rgba(49,48,45,.85);backdrop-filter:blur(12px);font:600 12.5px/1 Pretendard,sans-serif;color:#faf9f7;white-space:nowrap}
+  .chip.on{background:#faf9f7;color:#1d1d1b;font-weight:700}
+  .dot{width:7px;height:7px;border-radius:50%}
+  .cluster{position:absolute;transform:translate(-50%,-50%);display:flex;align-items:center;gap:6px}
+  .bub{border-radius:99px;background:#4a4843;color:#faf9f7;font:800 13px/1 Pretendard,sans-serif;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(0,0,0,.5);border:2.5px solid #1d1d1b}
+  .clabel{font:700 11px/1 Pretendard,sans-serif;color:#faf9f7;background:rgba(29,29,27,.75);padding:2px 5px;border-radius:4px;white-space:nowrap}
+  .pin{position:absolute;transform:translate(-50%,-50%);border-radius:50%;border:2.5px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.22)}
+  .note{width:400px;box-sizing:border-box;background:#1d1d1b;color:#faf9f7;border:1px solid rgba(250,249,247,.08);border-radius:20px;padding:18px;display:flex;flex-direction:column;gap:10px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div style="max-width:600px;display:flex;flex-direction:column;gap:10px">
+    <div style="font:500 11px/1 'IBM Plex Mono',monospace;letter-spacing:.08em;color:rgba(250,249,247,.45)">우맛공 · 첫 화면 지도 v2 · 390px</div>
+    <div style="font:600 30px/1.15 Pretendard,sans-serif;letter-spacing:-.04em;color:#faf9f7">전국에서 시작해 동네로 들어간다</div>
+    <div style="font:400 13.5px/1.7 Pretendard,sans-serif;color:rgba(250,249,247,.6)">첫 진입은 남한 전체. 지역별 클러스터 숫자만 보이고, 두 단계 확대하면 기존 동네 지도(A1)로 이어집니다. 국토 형상은 Natural Earth 실제 지형 데이터로 렌더했고, 북한은 표시하지 않습니다.</div>
+  </div>
+
+  <div style="display:flex;gap:26px;flex-wrap:wrap;align-items:flex-start">
+
+    <div style="display:flex;flex-direction:column;gap:9px">
+      <div style="display:flex;align-items:baseline;gap:8px"><div class="badge">M1</div><div class="cap">전국 · 첫 진입</div></div>
+      <div class="frame" id="f1" data-screen-label="M1 전국 지도">
+        <svg id="svg1" width="390" height="844" style="position:absolute;inset:0"></svg>
+        <div style="position:absolute;left:0;right:0;top:0;padding:44px 16px 0;display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <div class="chip on"><div class="dot" style="background:#8fb098"></div>동네친구들</div>
+            <div class="chip"><div class="dot" style="background:#3d5a6b"></div>회사팀</div>
+            <div class="chip" style="color:rgba(250,249,247,.45)">+1</div>
+          </div>
+          <div style="width:38px;height:38px;flex:none;border-radius:50%;background:#45423d;box-shadow:0 0 0 2px #faf9f7;border:1px solid rgba(0,0,0,.05)"></div>
+        </div>
+        <div style="position:absolute;left:16px;top:98px;display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:10px;background:rgba(49,48,45,.85);backdrop-filter:blur(12px)">
+          <div style="font:500 13px/1 Pretendard,sans-serif;letter-spacing:-.02em;color:#faf9f7;white-space:nowrap">전국 124곳</div>
+          <div style="width:1px;height:12px;background:rgba(250,249,247,.15)"></div>
+          <div style="font:400 11.5px/1 'IBM Plex Mono',monospace;color:rgba(250,249,247,.6)">9개 지역</div>
+        </div>
+        <div style="position:absolute;left:16px;top:146px;padding:12px 14px;border-radius:16px;background:rgba(38,38,36,.9);backdrop-filter:blur(12px);display:flex;flex-direction:column;gap:8px">
+<div style="font:700 11.5px/1 Pretendard,sans-serif;color:rgba(250,249,247,.55);white-space:nowrap">숫자 = 기록한 곳</div>
+<div style="display:flex;align-items:center;gap:10px">
+<div style="display:flex;align-items:center;gap:5px"><div style="width:12px;height:12px;border-radius:50%;background:#4a4843;box-shadow:0 0 0 1px rgba(250,249,247,.2)"></div><div style="font:600 11px/1 Pretendard,sans-serif;color:#faf9f7;white-space:nowrap">기록</div></div>
+<div style="display:flex;align-items:center;gap:5px"><div style="width:12px;height:12px;border-radius:50%;background:#6f8f78"></div><div style="font:600 11px/1 Pretendard,sans-serif;color:#faf9f7;white-space:nowrap">5곳+</div></div>
+<div style="display:flex;align-items:center;gap:5px"><div style="width:12px;height:12px;border-radius:50%;background:#a8c6ae"></div><div style="font:600 11px/1 Pretendard,sans-serif;color:#faf9f7;white-space:nowrap">10곳+</div></div>
+<div style="display:flex;align-items:center;gap:5px"><div style="width:12px;height:12px;border-radius:50%;background:#d4f53c"></div><div style="font:700 11px/1 Pretendard,sans-serif;color:#d4f53c;white-space:nowrap">또 갈래 있음</div></div>
+</div></div>
+<div style="position:absolute;right:16px;bottom:112px;display:flex;flex-direction:column;gap:10px;align-items:flex-end">
+          <div style="position:relative;width:46px;height:46px;border-radius:18px;background:#262624;border:1px solid rgba(250,249,247,.08);display:flex;align-items:center;justify-content:center"><div style="width:16px;height:16px;border-radius:3px;border:2px solid #faf9f7"></div><div style="position:absolute;top:-5px;right:-5px;min-width:20px;height:20px;box-sizing:border-box;padding:0 5px;border-radius:99px;background:#d4f53c;color:#1d1d1b;border:2px solid #1d1d1b;display:flex;align-items:center;justify-content:center;font:500 11px/1 'IBM Plex Mono',monospace;color:#fff">3</div></div>
+          <div style="width:46px;height:46px;border-radius:18px;background:#262624;border:1px solid rgba(250,249,247,.08);display:flex;align-items:center;justify-content:center"><div style="width:14px;height:14px;border-radius:50%;border:2px solid #faf9f7"></div></div>
+        </div>
+        <div style="position:absolute;left:16px;right:16px;bottom:34px;display:flex;flex-direction:column;gap:9px">
+          <div style="align-self:center;padding:8px 12px;border-radius:99px;background:rgba(34,34,31,.72);backdrop-filter:blur(6px);font:400 11.5px/1 Pretendard,sans-serif;color:#fff">확대하면 동네 단위로 펼쳐져요</div>
+          <div style="height:56px;border-radius:20px;background:#d4f53c;box-shadow:0 12px 30px -8px rgba(212,245,60,.3);display:flex;align-items:center;justify-content:center;gap:9px">
+            <div style="font:800 16px/1 Pretendard,sans-serif;letter-spacing:-.03em;color:#1d1d1b;white-space:nowrap">내 근처 맛집</div>
+            <div style="padding:5px 9px;border-radius:999px;background:#1d1d1b;font:800 12px/1 Pretendard,sans-serif;color:#d4f53c">11</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:9px">
+      <div style="display:flex;align-items:baseline;gap:8px"><div class="badge">M2</div><div class="cap">한 단계 확대 · 수도권</div></div>
+      <div class="frame" id="f2" data-screen-label="M2 수도권">
+        <svg id="svg2" width="390" height="844" style="position:absolute;inset:0"></svg>
+        <div style="position:absolute;left:0;right:0;top:0;padding:44px 16px 0;display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+          <div style="display:flex;gap:6px">
+            <div class="chip on"><div class="dot" style="background:#8fb098"></div>동네친구들</div>
+            <div class="chip"><div class="dot" style="background:#3d5a6b"></div>회사팀</div>
+          </div>
+          <div style="width:38px;height:38px;flex:none;border-radius:50%;background:#45423d;box-shadow:0 0 0 2px #faf9f7"></div>
+        </div>
+        <div style="position:absolute;left:16px;top:98px;display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:10px;background:rgba(49,48,45,.85);backdrop-filter:blur(12px)">
+          <div style="font:500 13px/1 Pretendard,sans-serif;letter-spacing:-.02em;color:#faf9f7;white-space:nowrap">서울 · 경기 87곳</div>
+          <div style="width:1px;height:12px;background:rgba(250,249,247,.15)"></div>
+          <div style="font:400 11.5px/1 'IBM Plex Mono',monospace;color:rgba(250,249,247,.6)">36%</div>
+        </div>
+        <div style="position:absolute;right:16px;bottom:112px;width:46px;height:46px;border-radius:18px;background:#262624;border:1px solid rgba(250,249,247,.08);display:flex;align-items:center;justify-content:center"><div style="width:14px;height:14px;border-radius:50%;border:2px solid #faf9f7"></div></div>
+        <div style="position:absolute;left:16px;right:16px;bottom:34px;display:flex;flex-direction:column;gap:9px">
+          <div style="align-self:center;padding:8px 12px;border-radius:99px;background:rgba(34,34,31,.72);backdrop-filter:blur(6px);font:400 11.5px/1 Pretendard,sans-serif;color:#fff">한 번 더 확대하면 핀이 하나씩 보여요</div>
+          <div style="height:56px;border-radius:20px;background:#d4f53c;box-shadow:0 12px 30px -8px rgba(212,245,60,.3);display:flex;align-items:center;justify-content:center;gap:9px">
+            <div style="font:800 16px/1 Pretendard,sans-serif;letter-spacing:-.03em;color:#1d1d1b;white-space:nowrap">내 근처 맛집</div>
+            <div style="padding:5px 9px;border-radius:999px;background:#1d1d1b;font:800 12px/1 Pretendard,sans-serif;color:#d4f53c">11</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:12px;padding-top:30px">
+      <div class="note">
+        <div style="font:500 12.5px/1.3 Pretendard,sans-serif;color:#faf9f7">줌 단계 규칙</div>
+        <div style="font:400 12.5px/1.7 Pretendard,sans-serif;color:rgba(250,249,247,.6)">
+          · <b style="font-weight:500;color:#faf9f7">z5–7 전국</b> — 지역(광역시·도) 클러스터만. 개별 핀 없음, 라벨은 지역명 + 개수<br>
+          · <b style="font-weight:500;color:#faf9f7">z8–11 광역</b> — 시·군·구 클러스터. 5곳 이하 지역은 개별 핀으로 분해<br>
+          · <b style="font-weight:500;color:#faf9f7">z12+ 동네</b> — 기존 A1 화면. 평가 형태·클럽 색이 보이는 개별 핀<br>
+          · 첫 진입은 기록이 여러 지역에 흩어져 있으면 전국, 한 지역에 몰려 있으면 그 지역으로 자동 맞춤
+        </div>
+      </div>
+      <div class="note">
+        <div style="font:500 12.5px/1.3 Pretendard,sans-serif;color:#faf9f7">데이터·구현 메모</div>
+        <div style="font:400 12.5px/1.7 Pretendard,sans-serif;color:rgba(250,249,247,.6)">
+          국토 형상은 Natural Earth(world-atlas 110m) 실제 지형이고 남한만 렌더합니다. 실제 앱에서는 지도 SDK 타일이 이 자리를 대체하므로, 이 화면은 <b style="font-weight:500;color:#faf9f7">줌 단계별 클러스터 표현</b>과 오버레이 위치를 정하기 위한 목업입니다.<br><br>전국 뷰에서도 화면 영역 기반 조회 원칙은 유지 — 클러스터 집계는 서버에서 지역 단위로 캐싱해 핀 좌표를 매번 내려받지 않습니다.
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const CITIES = [
+  {n:"수도권", ll:[126.99, 37.50], c:93, t:31},
+  {n:"강원",  ll:[128.60,  37.75 ], c:5, t:0},
+  {n:"대전",  ll:[127.385, 36.351], c:4, t:0},
+  {n:"대구",  ll:[128.601, 35.871], c:12, t:0},
+  {n:"부산",  ll:[129.075, 35.180], c:9, t:6},
+  {n:"광주",  ll:[126.852, 35.160], c:3, t:0},
+  {n:"제주",  ll:[126.531, 33.499], c:5, t:0}
+];
+const SEOUL_AREAS = [
+  {n:"마포",   ll:[126.908, 37.556], c:14, t:9, club:"#4a6b52"},
+  {n:"성동",   ll:[127.037, 37.563], c:11, t:0, club:"#4a6b52"},
+  {n:"강남",   ll:[127.047, 37.498], c:11, t:12, club:"#3d5a6b"},
+
+  {n:"종로",   ll:[126.979, 37.605], c:7,  t:0, club:"#6b5a3d"},
+
+  {n:"수원",   ll:[127.029, 37.263], c:6,  t:0, club:"#4a6b52"},
+  {n:"성남",   ll:[127.127, 37.420], c:4,  t:0, club:"#3d5a6b"},
+  {n:"고양",   ll:[126.835, 37.658], c:3,  t:0, club:"#4a6b52"},
+  {n:"인천",   ll:[126.705, 37.456], c:6,  t:0, club:"#6b5a3d"}
+];
+
+function tier(d){if(d.t>0)return {bg:"#d4f53c",fg:"#1d1d1b"};if(d.c>=10)return {bg:"#a8c6ae",fg:"#1d1d1b"};if(d.c>=5)return {bg:"#6f8f78",fg:"#faf9f7"};return {bg:"#4a4843",fg:"#faf9f7"};}
+function bub(count){
+  const s = count >= 40 ? 52 : count >= 15 ? 44 : count >= 6 ? 38 : 32;
+  return s;
+}
+
+function overlay(frameId, proj, items, opts){
+  const host = document.getElementById(frameId);
+  items.forEach(d => {
+    const p = proj(d.ll);
+    if(!p) return;
+    const el = document.createElement("div");
+    el.className = "cluster";
+    el.style.left = p[0] + "px";
+    el.style.top = p[1] + "px";
+    const size = bub(d.c);
+    const tr = tier({t:d.t||0,c:d.c});
+    const sub = (d.t && !(opts&&opts.compact)) ? `<span style="color:rgba(250,249,247,.6);font-weight:600"> · 또 갈래 ${d.t}</span>` : "";
+    el.innerHTML = `<div class="bub" style="width:${size}px;height:${size}px;background:${tr.bg};color:${tr.fg}">${d.c}</div><div class="clabel">${d.n}${sub}</div>`;
+    host.appendChild(el);
+  });
+  if(opts && opts.me){
+    const p = proj(opts.me);
+    const me = document.createElement("div");
+    me.className = "pin";
+    me.style.cssText += `left:${p[0]}px;top:${p[1]}px;width:16px;height:16px;background:#faf9f7;box-shadow:0 0 0 8px rgba(250,249,247,.16),0 1px 4px rgba(0,0,0,.22);`;
+    host.appendChild(me);
+  }
+}
+
+d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/countries-110m.json").then(topo => {
+  const all = topojson.feature(topo, topo.objects.countries).features;
+  const kr = all.find(f => f.properties.name === "South Korea");
+  const neighbors = all.filter(f => ["Japan","North Korea","China"].includes(f.properties.name));
+
+  // ── M1 : 전국
+  const proj1 = d3.geoMercator().fitExtent([[54, 150],[336, 636]], kr);
+  const path1 = d3.geoPath(proj1);
+  const svg1 = d3.select("#svg1");
+  svg1.append("rect").attr("width",390).attr("height",844).attr("fill","#1d1d1b");
+  svg1.append("g").selectAll("path").data(neighbors).join("path")
+    .attr("d", path1).attr("fill","#232321").attr("stroke","#2a2a28").attr("stroke-width",.8);
+  svg1.append("path").attr("d", path1(kr)).attr("fill","#31302d")
+    .attr("stroke","#45423d").attr("stroke-width",1);
+  overlay("f1", proj1, CITIES);
+
+  // ── M2 : 수도권
+  const proj2 = d3.geoMercator().center([126.90, 37.45]).scale(38000).translate([195, 430]);
+  const path2 = d3.geoPath(proj2);
+  const svg2 = d3.select("#svg2");
+  svg2.append("rect").attr("width",390).attr("height",844).attr("fill","#1d1d1b");
+  svg2.append("g").selectAll("path").data(neighbors).join("path")
+    .attr("d", path2).attr("fill","#232321").attr("stroke","#2a2a28").attr("stroke-width",.8);
+  svg2.append("path").attr("d", path2(kr)).attr("fill","#31302d")
+    .attr("stroke","#45423d").attr("stroke-width",1);
+  const roads = [[[126.5,37.52],[127.45,37.60]],[[126.62,37.10],[127.20,37.78]],[[126.55,37.36],[127.42,37.28]]];
+  svg2.append("g").selectAll("path").data(roads).join("path")
+    .attr("d", d => d3.line()(d.map(ll => proj2(ll))))
+    .attr("stroke","#3d3c38").attr("stroke-width",5).attr("fill","none");
+  overlay("f2", proj2, SEOUL_AREAS, {me:[126.908, 37.556], compact:true});
+});
+</script>
+</body>
+</html>
