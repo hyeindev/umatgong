@@ -8,8 +8,10 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import java.sql.SQLException;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -19,6 +21,8 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.hibernate.exception.ConstraintViolationException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.PlatformTransactionManager;
 
@@ -174,6 +178,50 @@ class AuthServiceTest {
 		authService.logout("unknown");
 
 		verify(refreshTokenRepository).revokeFamily(eq(token.getFamilyId()), eq(NOW));
+	}
+
+	@Test
+	void 동시_가입으로_회원번호가_중복되면_기존_사용자로_다시_로그인한다() {
+		User winner = withId(User.signUpWithKakao(1L, "지현", null), 9L);
+		given(kakaoAuthClient.verifyAndFetchUser(anyString())).willReturn(new KakaoUserInfo(1L, "지현", null));
+		// 첫 시도: 아직 없다고 보고 가입 → 다른 요청이 먼저 가입해 중복 / 재시도: 먼저 가입한 사용자가 보인다
+		given(userRepository.findByKakaoId(1L)).willReturn(Optional.empty(), Optional.of(winner));
+		given(userRepository.save(any(User.class))).willThrow(duplicate("uq_users_kakao_id"));
+
+		LoginResponse response = authService.loginWithKakao("kakao-token");
+
+		assertThat(response.user().id()).isEqualTo(9L);
+		assertThat(response.newUser()).isFalse();
+		verify(userRepository, times(2)).findByKakaoId(1L);
+		// 실패한 첫 시도에서는 리프레시 토큰을 저장하지 않았고, 재시도에서 한 번만 저장한다.
+		verify(refreshTokenRepository, times(1)).save(any(RefreshToken.class));
+	}
+
+	@Test
+	void 회원번호가_아닌_다른_무결성_위반은_재시도하지_않고_그대로_올린다() {
+		given(kakaoAuthClient.verifyAndFetchUser(anyString())).willReturn(new KakaoUserInfo(1L, "지현", null));
+		given(userRepository.findByKakaoId(1L)).willReturn(Optional.empty());
+		given(userRepository.save(any(User.class))).willThrow(duplicate("some_other_constraint"));
+
+		assertThatThrownBy(() -> authService.loginWithKakao("kakao-token"))
+			.isInstanceOf(DataIntegrityViolationException.class);
+		verify(userRepository, times(1)).findByKakaoId(1L);
+	}
+
+	@Test
+	void 재시도는_한_번만_한다() {
+		given(kakaoAuthClient.verifyAndFetchUser(anyString())).willReturn(new KakaoUserInfo(1L, "지현", null));
+		given(userRepository.findByKakaoId(1L)).willReturn(Optional.empty());
+		given(userRepository.save(any(User.class))).willThrow(duplicate("uq_users_kakao_id"));
+
+		assertThatThrownBy(() -> authService.loginWithKakao("kakao-token"))
+			.isInstanceOf(DataIntegrityViolationException.class);
+		verify(userRepository, times(2)).findByKakaoId(1L);
+	}
+
+	private static DataIntegrityViolationException duplicate(String constraint) {
+		return new DataIntegrityViolationException("duplicate key",
+			new ConstraintViolationException("duplicate key", new SQLException("duplicate key"), constraint));
 	}
 
 	private static User withId(User user, Long id) {

@@ -10,6 +10,8 @@ import java.util.Base64;
 import java.util.HexFormat;
 import java.util.Optional;
 
+import org.hibernate.exception.ConstraintViolationException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,6 +41,7 @@ public class AuthService {
 	// 닉네임 동의를 하지 않은 사용자. users.name은 NOT NULL이다.
 	private static final String DEFAULT_NAME = "이름 없음";
 	private static final SecureRandom RANDOM = new SecureRandom();
+	private static final String KAKAO_ID_UNIQUE_CONSTRAINT = "uq_users_kakao_id";
 
 	private final KakaoAuthClient kakaoAuthClient;
 	private final UserRepository userRepository;
@@ -65,7 +68,29 @@ public class AuthService {
 	 */
 	public LoginResponse loginWithKakao(String kakaoAccessToken) {
 		KakaoUserInfo kakaoUser = kakaoAuthClient.verifyAndFetchUser(kakaoAccessToken);
-		return transactionTemplate.execute(status -> signInOrSignUp(kakaoUser));
+		try {
+			return transactionTemplate.execute(status -> signInOrSignUp(kakaoUser));
+		} catch (DataIntegrityViolationException e) {
+			// 같은 신규 사용자의 로그인이 동시에 오면(버튼 연타, 재시도) 둘 다 "없음"을 보고 가입을 시도하고
+			// 늦은 쪽은 회원번호 중복으로 실패한다. 먼저 가입한 쪽은 이미 커밋됐으므로 새 트랜잭션에서
+			// 한 번 더 하면 기존 사용자로 로그인된다. 다른 무결성 위반은 그대로 올린다.
+			if (!isDuplicateKakaoId(e)) {
+				throw e;
+			}
+			log.info("Concurrent sign-up for the same Kakao user; retrying as sign-in: kakaoId={}",
+				kakaoUser.kakaoId());
+			return transactionTemplate.execute(status -> signInOrSignUp(kakaoUser));
+		}
+	}
+
+	private static boolean isDuplicateKakaoId(DataIntegrityViolationException e) {
+		for (Throwable t = e; t != null; t = t.getCause()) {
+			if (t instanceof ConstraintViolationException cve
+				&& KAKAO_ID_UNIQUE_CONSTRAINT.equalsIgnoreCase(cve.getConstraintName())) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	private LoginResponse signInOrSignUp(KakaoUserInfo kakaoUser) {
