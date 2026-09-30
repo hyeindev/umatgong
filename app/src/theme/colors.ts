@@ -83,6 +83,8 @@ export const colors = {
     /** 카카오 로그인 버튼에만 */
     kakao: palette.kakaoYellow,
     onKakao: 'rgba(0, 0, 0, 0.85)',
+    /** 카카오 말풍선 심볼 */
+    kakaoSymbol: palette.black,
   },
 
   pin: {
