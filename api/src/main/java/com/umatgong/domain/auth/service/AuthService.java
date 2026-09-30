@@ -63,10 +63,25 @@ public class AuthService {
 		this.transactionTemplate = new TransactionTemplate(transactionManager);
 	}
 
-	/**
-	 * 카카오 호출은 트랜잭션 밖에서 한다. 카카오가 느릴 때 DB 커넥션을 붙잡고 기다리지 않기 위해서다.
-	 */
+	/** 네이티브 로그인. 카카오 네이티브 SDK가 준 액세스 토큰으로 로그인한다. */
 	public LoginResponse loginWithKakao(String kakaoAccessToken) {
+		return signInWithKakaoToken(kakaoAccessToken);
+	}
+
+	/**
+	 * 웹 로그인. 카카오 JS SDK authorize가 준 인가 코드를 카카오 액세스 토큰으로 바꾼 뒤
+	 * 네이티브 로그인과 같은 경로로 로그인한다. 같은 카카오 회원은 어느 경로로 와도 같은 사용자다.
+	 */
+	public LoginResponse loginWithKakaoCode(String code, String redirectUri) {
+		return signInWithKakaoToken(kakaoAuthClient.exchangeCode(code, redirectUri));
+	}
+
+	/**
+	 * 두 로그인 경로가 공유하는 사용자 처리. 카카오 토큰 검증 → 조회·가입 → 우리 토큰 발급.
+	 *
+	 * <p>카카오 호출은 트랜잭션 밖에서 한다. 카카오가 느릴 때 DB 커넥션을 붙잡고 기다리지 않기 위해서다.
+	 */
+	private LoginResponse signInWithKakaoToken(String kakaoAccessToken) {
 		KakaoUserInfo kakaoUser = kakaoAuthClient.verifyAndFetchUser(kakaoAccessToken);
 		try {
 			return transactionTemplate.execute(status -> signInOrSignUp(kakaoUser));

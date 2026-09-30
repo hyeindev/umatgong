@@ -74,6 +74,46 @@ class AuthControllerTest {
 	}
 
 	@Test
+	void 웹_코드_로그인은_인증_없이_호출되고_같은_형태로_토큰과_사용자를_돌려준다() throws Exception {
+		given(authService.loginWithKakaoCode("auth-code", "https://umatgong.test/auth/kakao/callback"))
+			.willReturn(new LoginResponse(new TokenResponse("access", 1800, "refresh", 1_209_600),
+				new LoginResponse.UserSummary(7L, "지현", null), false));
+
+		mockMvc.perform(post("/api/auth/kakao/code")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"code\":\"auth-code\",\"redirectUri\":\"https://umatgong.test/auth/kakao/callback\"}"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.success").value(true))
+			.andExpect(jsonPath("$.data.accessToken").value("access"))
+			.andExpect(jsonPath("$.data.refreshToken").value("refresh"))
+			.andExpect(jsonPath("$.data.user.id").value(7))
+			.andExpect(jsonPath("$.data.newUser").value(false))
+			.andExpect(jsonPath("$.data.code").doesNotExist());
+	}
+
+	@Test
+	void 코드나_redirectUri가_비어_있으면_INVALID_INPUT이다() throws Exception {
+		mockMvc.perform(post("/api/auth/kakao/code")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"code\":\"\",\"redirectUri\":\"\"}"))
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.error.code").value("INVALID_INPUT"))
+			.andExpect(jsonPath("$.error.fieldErrors.length()").value(2));
+	}
+
+	@Test
+	void 허용되지_않은_redirectUri는_400_KAKAO_REDIRECT_URI_NOT_ALLOWED다() throws Exception {
+		given(authService.loginWithKakaoCode("auth-code", "https://evil.test/cb"))
+			.willThrow(new BusinessException(ErrorCode.KAKAO_REDIRECT_URI_NOT_ALLOWED));
+
+		mockMvc.perform(post("/api/auth/kakao/code")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"code\":\"auth-code\",\"redirectUri\":\"https://evil.test/cb\"}"))
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.error.code").value("KAKAO_REDIRECT_URI_NOT_ALLOWED"));
+	}
+
+	@Test
 	void 갱신에_실패하면_INVALID_REFRESH_TOKEN으로_401이다() throws Exception {
 		given(authService.refresh("bad")).willThrow(new BusinessException(ErrorCode.INVALID_REFRESH_TOKEN));
 

@@ -31,6 +31,7 @@ class ApplicationConfigTest {
 		assertThat(raw("spring.datasource.password")).isEqualTo("${DB_PASSWORD:}");
 		assertThat(raw("umatgong.jwt.secret")).isEqualTo("${JWT_SECRET:}");
 		assertThat(raw("umatgong.kakao.rest-api-key")).isEqualTo("${KAKAO_REST_API_KEY:}");
+		assertThat(raw("umatgong.kakao.client-secret")).isEqualTo("${KAKAO_CLIENT_SECRET:}");
 	}
 
 	@Test
