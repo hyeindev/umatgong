@@ -1,0 +1,15 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    // lib/의 플랫폼별 파일(Foo.web.tsx / Foo.native.tsx)을 `./Foo`로 import할 때
+    // 타입 검사는 네이티브 쪽으로 해석한다. 웹 파일은 같은 *.types.ts 타입을
+    // 명시해서 두 구현이 같은 인터페이스를 지키는지 함께 검사된다.
+    "moduleSuffixes": [".native", ""],
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts"]
+}
