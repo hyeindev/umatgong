@@ -22,6 +22,8 @@ ext {
 	// 6.x 라인이 Boot 3.5의 Hibernate 6.6 / JPA 3.1과 맞는다 (7.x는 Hibernate 7 대상).
 	querydslVersion = '6.12'
 	jjwtVersion = '0.13.0'
+	// Boot가 kotlin-stdlib를 1.9로 내려 OkHttp 5(mockwebserver3, 테스트 전용)가 깨지지 않게 올려 둔다.
+	set('kotlin.version', '2.1.21')
 }
 
 dependencies {
@@ -49,6 +51,8 @@ dependencies {
 
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.security:spring-security-test'
+	// 카카오 API를 실제로 부르지 않고 로컬 HTTP 서버로 흉내 낸다. Boot가 버전을 관리하지 않아 직접 고정한다.
+	testImplementation 'com.squareup.okhttp3:mockwebserver3:5.5.0'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
