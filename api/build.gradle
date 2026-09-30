@@ -52,6 +52,12 @@ dependencies {
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
+// ./gradlew bootRun 은 기본으로 local 프로필로 뜬다. 다른 프로필은 SPRING_PROFILES_ACTIVE로 지정.
+// bootRun에만 걸리므로 배포용 jar(bootJar)에는 영향이 없다.
+tasks.named('bootRun') {
+	systemProperty 'spring.profiles.active', System.getenv('SPRING_PROFILES_ACTIVE') ?: 'local'
+}
+
 tasks.named('test') {
 	useJUnitPlatform()
 }
