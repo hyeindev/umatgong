@@ -33,7 +33,8 @@ export function StickerCard({ photoHeight, photo, caption, sticker, style }: Pro
         {photo ? (
           <Image
             source={photo}
-            style={StyleSheet.absoluteFill}
+            // 웹은 크기를 주지 않으면 원본 크기로 그려져 왼쪽 위만 보인다. 자리를 꽉 채운다
+            style={styles.image}
             resizeMode="cover"
             // 사진은 장식이다. 스크린리더가 읽지 않는다
             accessible={false}
@@ -63,6 +64,10 @@ const styles = StyleSheet.create({
     borderRadius: radius.sm,
     overflow: 'hidden',
     backgroundColor: colors.surface.placeholder,
+  },
+  image: {
+    width: '100%',
+    height: '100%',
   },
   bottom: {
     height: spacing[7],
