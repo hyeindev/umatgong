@@ -11,7 +11,7 @@ import java.util.List;
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.MigrationInfo;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+import org.junit.jupiter.api.condition.EnabledIf;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -39,12 +39,12 @@ import jakarta.persistence.EntityManager;
  * 실제 PostGIS에 붙여 전체 컨텍스트를 띄운다. 런타임에만 드러나는 것을 여기서 잡는다:
  * Flyway 적용, Hibernate 스키마 검증(ddl-auto=validate), geography·text[] 매핑, JWT 발급·검증.
  *
- * <p>DB_URL이 없으면 건너뛴다(DB 없는 로컬). CI는 DB_URL을 넣고, 이 테스트가 실제로 돌았는지 따로 확인한다.
+ * <p>CI_INTEGRATION_DB=true일 때만 돈다 (TestDatabase 참고). CI는 이 값을 넣고, 이 테스트가 실제로 돌았는지 따로 확인한다.
  * 각 테스트는 트랜잭션 안에서 돌고 끝나면 롤백된다.
  */
 @SpringBootTest
 @Transactional
-@EnabledIfEnvironmentVariable(named = "DB_URL", matches = ".+")
+@EnabledIf("com.umatgong.integration.TestDatabase#enabled")
 class DatabaseIntegrationTest {
 
 	private static final Coordinate MANGWON = Coordinate.of(37.5556, 126.9106);

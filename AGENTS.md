@@ -50,7 +50,8 @@ docs/   기획 문서 (공용)
 | 네이티브 앱 키 | `app/` 앱 빌드 | 패키지명·번들ID 등록 필요 |
 
 JWT 시크릿과 DB 접속 정보도 환경변수로만 읽는다.
-`.env`, `application.yml`에 실제 값을 넣지 않는다. example 파일만 커밋한다.
+`.env`와 `application-local.yml`은 커밋하지 않는다. `application.yml`은 커밋하되
+`${환경변수}` 자리만 두고 실제 값은 넣지 않는다.
 
 ### 좌표
 

@@ -79,7 +79,8 @@ com.umatgong
 ### 비밀키
 
 - JWT 시크릿, DB 접속 정보, 카카오 키는 환경변수로만 읽는다
-- `application.yml`에 실제 값을 넣지 않는다. `application-example.yml`만 커밋
+- `application.yml`은 커밋한다. 단 실제 값은 넣지 않고 `${환경변수}` 자리만 둔다 (`ApplicationConfigTest`가 검사)
+- 로컬 개발값은 `application-local.yml`에 둔다. 이 파일은 커밋하지 않는다
 
 ---
 

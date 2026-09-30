@@ -3,7 +3,7 @@ package com.umatgong.integration;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+import org.junit.jupiter.api.condition.EnabledIf;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationContext;
@@ -21,7 +21,7 @@ import com.umatgong.global.security.JwtProvider;
  * 배포 설정(application.yml + 환경변수)만으로 전체 컨텍스트가 뜨는지 본다. 프로필 없이 띄운다.
  */
 @SpringBootTest
-@EnabledIfEnvironmentVariable(named = "DB_URL", matches = ".+")
+@EnabledIf("com.umatgong.integration.TestDatabase#enabled")
 class ApplicationContextIntegrationTest {
 
 	@Autowired

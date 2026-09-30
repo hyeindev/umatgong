@@ -2,9 +2,8 @@
 .env
 .env.*
 !.env.example
-api/src/main/resources/application.yml
+# application.yml은 커밋한다(환경변수 자리만 있음). 프로필별 로컬 값 파일만 제외한다.
 api/src/main/resources/application-*.yml
-!api/src/main/resources/application-example.yml
 
 # api (Gradle)
 api/.gradle/
