@@ -92,13 +92,14 @@ export const colors = {
     nope: creamAlpha(0.3),
     /** 핀 테두리 — 지도 위에서 핀을 떼어 보이게 한다 */
     outline: palette.ink900,
+    /** 내 위치 — 크림색 점 + 옅은 후광 */
     me: palette.cream,
     meHalo: creamAlpha(0.14),
   },
 
   /**
    * 클럽 색. 키는 API의 club color 값과 같다.
-   * 라임과 겹치지 않게 전부 저채도이고, 빨강 계열은 넣지 않는다.
+   * 라임과 겹치지 않게 전부 저채도이고, 빨강 계열은 넣지 않는다 (경고색 status.danger와 충돌).
    */
   club: {
     SAGE: '#8fb098',
