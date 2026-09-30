@@ -1,20 +1,25 @@
-# application.yml 템플릿. 이 파일을 같은 폴더에 application.yml로 복사해서 쓴다.
-#   cp application-example.yml application.yml
-# application.yml은 커밋하지 않는다(.gitignore). 여기에는 값이 아니라 환경변수 자리만 둔다.
+# 공통 설정. 이 파일은 커밋한다. 단 실제 값은 절대 넣지 않고 ${환경변수} 자리만 둔다.
+# (JWT 시크릿·DB 비밀번호·카카오 키 등. ApplicationConfigTest가 이를 검사한다)
 #
 # 설정이 적용되는 순서 (뒤가 이긴다)
-#   1. application.yml          — 공통 구조. 비밀값은 환경변수로만 받는다
-#   2. application-local.yml    — 로컬 개발값 (local 프로필, 커밋 안 함)
+#   1. application.yml          — 이 파일. 공통 구조
+#   2. application-local.yml    — 로컬 개발값 (local 프로필, 커밋하지 않음)
 #   3. 환경변수                  — 배포 환경. 모든 ${...} 자리를 덮어쓴다
 #
 # 배포 시 필요한 환경변수
-#   DB_URL, DB_USERNAME, DB_PASSWORD
+#   PORT                          — Railway 등 플랫폼이 넣어 준다. 없으면 8080
+#   DB_URL                        — jdbc:postgresql://호스트:포트/DB 형식 (postgresql:// 형식은 안 됨)
+#   DB_USERNAME, DB_PASSWORD
 #   JWT_SECRET                    — 32바이트(256비트) 이상. 예: openssl rand -base64 64
 #   JWT_ACCESS_TOKEN_VALIDITY     — 초 단위 (기본 1800)
 #   JWT_REFRESH_TOKEN_VALIDITY    — 초 단위 (기본 1209600 = 14일)
 #   KAKAO_REST_API_KEY            — 장소 검색(로컬 API)용. 없으면 기동하지 않는다
 #   KAKAO_APP_ID                  — 카카오 개발자 콘솔 [앱 설정 > 앱 키]의 앱 ID. 없으면 기동하지 않는다
 #   CORS_ALLOWED_ORIGINS          — 쉼표로 여러 개
+
+server:
+  # 배포 플랫폼(Railway 등)은 PORT로 포트를 정해 준다. 그 포트로 떠야 요청이 들어온다.
+  port: ${PORT:8080}
 
 spring:
   application:

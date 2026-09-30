@@ -15,7 +15,7 @@ import java.util.function.Function;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+import org.junit.jupiter.api.condition.EnabledIf;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -45,7 +45,7 @@ import mockwebserver3.RecordedRequest;
  */
 @SpringBootTest
 @AutoConfigureMockMvc
-@EnabledIfEnvironmentVariable(named = "DB_URL", matches = ".+")
+@EnabledIf("com.umatgong.integration.TestDatabase#enabled")
 class PlaceFlowIntegrationTest {
 
 	private static final List<RecordedRequest> KAKAO_REQUESTS = Collections.synchronizedList(new ArrayList<>());

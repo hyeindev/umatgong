@@ -43,8 +43,10 @@ jobs:
           --health-retries 20
 
     # 전부 CI 전용 더미값이다. 테스트는 실제 카카오를 호출하지 않으므로 진짜 키가 필요 없다.
-    # DB_URL이 있어야 DatabaseIntegrationTest가 돈다.
     env:
+      # 통합 테스트는 테이블을 비운다(TRUNCATE). 이 값이 true이고 DB가 localhost일 때만 돈다.
+      # 배포 플랫폼 빌드에서 운영 DB로 통합 테스트가 도는 사고를 막기 위해서다.
+      CI_INTEGRATION_DB: 'true'
       DB_URL: jdbc:postgresql://localhost:5432/umatgong
       DB_USERNAME: umatgong
       DB_PASSWORD: ci-password
@@ -64,17 +66,13 @@ jobs:
       # Gradle 의존성·빌드 캐시. 래퍼 jar 검증도 함께 한다.
       - uses: gradle/actions/setup-gradle@v4
 
-      # application.yml은 커밋하지 않는다. 개발자와 같은 방식으로 템플릿에서 만든다.
-      - name: Prepare application.yml
-        run: cp src/main/resources/application-example.yml src/main/resources/application.yml
-
       - name: Test
         run: ./gradlew test
 
       - name: Build
         run: ./gradlew build
 
-      # DB_URL 설정이 빠지면 통합 테스트가 조용히 건너뛰어져도 초록불이 된다. 그걸 막는다.
+      # CI_INTEGRATION_DB 설정이 빠지면 통합 테스트가 조용히 건너뛰어져도 초록불이 된다. 그걸 막는다.
       - name: Check integration tests actually ran
         run: |
           python3 - <<'PY'
@@ -89,7 +87,7 @@ jobs:
               skipped += int(re.search(r'skipped="(\d+)"', head).group(1))
           print(f"integration tests: {total}, skipped: {skipped}")
           if total == 0 or skipped:
-              sys.exit("::error::통합 테스트가 실행되지 않았습니다 (DB_URL 확인)")
+              sys.exit("::error::통합 테스트가 실행되지 않았습니다 (CI_INTEGRATION_DB 확인)")
           PY
 
       # 테스트는 롤백되지만 Flyway 적용은 커밋된다. 파일 수만큼 성공 기록이 있는지 DB에서 직접 본다.
