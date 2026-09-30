@@ -1,0 +1,55 @@
+// 4 단위 스케일. 촘촘한 칩·아이콘 간격을 위해 2px 반 단계를 둔다.
+export const spacing = {
+  0: 0,
+  0.5: 2,
+  1: 4,
+  1.5: 6,
+  2: 8,
+  2.5: 10,
+  3: 12,
+  3.5: 14,
+  4: 16,
+  5: 20,
+  6: 24,
+  7: 28,
+  8: 32,
+  10: 40,
+  12: 48,
+} as const;
+
+/** 반복되는 배치 값 (디자인 시스템 v2 “간격”) */
+export const layout = {
+  /** 화면 좌우 여백 */
+  screenGutter: spacing[5],
+  /** 카드 안쪽 여백 */
+  cardPadding: spacing[4],
+  /** 섹션 사이 */
+  sectionGap: spacing[7],
+  /** 목록 행 사이. 구분선 없이 간격으로만 나눈다 */
+  listRowGap: spacing[3.5],
+} as const;
+
+export const radius = {
+  xs: 4,
+  sm: 10,
+  md: 12,
+  lg: 16,
+  xl: 18,
+  '2xl': 22,
+  '3xl': 28,
+  full: 999,
+} as const;
+
+/** 쓰임새별 radius (디자인 시스템 v2 “라운드”) */
+export const shape = {
+  /** 목록·후보 썸네일 */
+  thumbnail: radius.md,
+  /** 스티커(폴라로이드) 카드 */
+  stickerCard: radius.lg,
+  button: radius.xl,
+  card: radius['2xl'],
+  /** 바텀 시트 위쪽 모서리 */
+  sheet: radius['3xl'],
+  /** 칩, 스티커 라벨, 배지 */
+  pill: radius.full,
+} as const;
