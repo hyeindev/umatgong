@@ -72,6 +72,17 @@ jobs:
       - name: Build
         run: ./gradlew build
 
+      # 배포 시작 명령(java -jar build/libs/app.jar)이 가리키는 파일이 정확히 하나 있는지 본다.
+      - name: Check deployable jar
+        run: |
+          ls -l build/libs
+          test -f build/libs/app.jar || { echo "::error::build/libs/app.jar가 없습니다"; exit 1; }
+          count=$(ls build/libs/*.jar | wc -l)
+          if [ "$count" -ne 1 ]; then
+            echo "::error::build/libs에 jar가 $count개 있습니다 (app.jar 하나여야 함)"
+            exit 1
+          fi
+
       # CI_INTEGRATION_DB 설정이 빠지면 통합 테스트가 조용히 건너뛰어져도 초록불이 된다. 그걸 막는다.
       - name: Check integration tests actually ran
         run: |
