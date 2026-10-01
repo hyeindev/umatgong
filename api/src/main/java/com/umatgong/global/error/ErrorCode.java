@@ -41,7 +41,13 @@ public enum ErrorCode {
 	// 정원이 다 찼다. 새 초대·합류만 막고 기존 멤버는 그대로 쓴다.
 	CLUB_FULL(HttpStatus.CONFLICT, "클럽 정원이 다 찼습니다."),
 	// 한 사람이 속할 수 있는 클럽 수를 넘었다.
-	CLUB_LIMIT_REACHED(HttpStatus.CONFLICT, "더 이상 클럽에 들어갈 수 없습니다.");
+	CLUB_LIMIT_REACHED(HttpStatus.CONFLICT, "더 이상 클럽에 들어갈 수 없습니다."),
+
+	// 장소·기록
+	// 없는 장소와 다른 클럽의 커스텀 장소를 구분하지 않는다.
+	PLACE_NOT_FOUND(HttpStatus.NOT_FOUND, "장소를 찾을 수 없습니다."),
+	// 없는 기록과 내게 보이지 않는 기록(다른 클럽, 남의 비공개)을 구분하지 않는다.
+	VISIT_NOT_FOUND(HttpStatus.NOT_FOUND, "기록을 찾을 수 없습니다.");
 
 	private final HttpStatus status;
 	private final String message;

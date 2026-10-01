@@ -91,6 +91,8 @@ Authorization: Bearer {accessToken}
 | `ALREADY_CLUB_MEMBER` | 409 | 이미 그 클럽의 멤버 |
 | `CLUB_FULL` | 409 | 클럽 정원이 다 참. 새 초대·합류만 막힌다 |
 | `CLUB_LIMIT_REACHED` | 409 | 한 사람이 속할 수 있는 클럽 수를 넘음 |
+| `PLACE_NOT_FOUND` | 404 | 없는 장소, 또는 다른 클럽의 커스텀 장소 (둘을 구분하지 않는다) |
+| `VISIT_NOT_FOUND` | 404 | 없는 기록, 또는 내게 보이지 않는 기록 (다른 클럽, 남의 비공개) |
 | `KAKAO_UNAVAILABLE` | 502 | 카카오 서버 장애·타임아웃·호출 한도 초과. 잠시 후 재시도 |
 | `INTERNAL_ERROR` | 500 | 서버 오류 |
 
@@ -527,6 +529,197 @@ GET /api/places/search?query=김반장&lat=37.5556&lng=126.9106
 - 클럽장이 나가면 클럽장 자리만 비고 클럽과 남은 멤버는 그대로다. 이후 초대 코드 재발급은 할 수 없지만 지금 코드로 초대는 계속된다
 - 마지막 멤버가 나가도 클럽은 지우지 않는다 (그 클럽에 남긴 기록이 클럽을 참조한다)
 - 탈퇴하면 클럽 수 제한에서 빠진다
-- 탈퇴해도 그 클럽에 남긴 내 기록은 아직 지우지 않는다 (기록 API와 함께 정한다, 기획서 C-04)
+- 탈퇴하면 그 클럽 기록이 더 이상 보이지 않는다. 그 클럽에 남긴 내 기록은 지우지 않고 남지만 조회에서 빠진다. 지우려면 `DELETE /api/visits/{id}` (5장)
 
 에러: `404 CLUB_NOT_FOUND` (없는 클럽, 또는 내가 멤버가 아닌 클럽)
+
+---
+
+## 5. 방문 기록 (`/api/visits`)
+
+모든 API에 **액세스 토큰이 필요하다.**
+
+### 보이는 기록 (권한 규칙)
+
+모든 조회는 아래 규칙 하나로 거른다. 서버가 요청마다 요청자의 **지금** 클럽 목록을 DB에서 다시 읽어 적용한다.
+
+| 기록 | 보이는 사람 |
+|---|---|
+| 클럽 기록, `CLUB` 공개 | 그 클럽의 **현재** 멤버 |
+| 클럽 기록, `PRIVATE` | 작성자 본인 (그 클럽의 현재 멤버일 때) |
+| 클럽 없이 남긴 기록 (항상 `PRIVATE`) | 작성자 본인 |
+
+- **속하지 않은 클럽의 기록은 어떤 API로도 나오지 않는다.** 탈퇴하면 다음 요청부터 그 클럽 기록이 안 보인다.
+  탈퇴한 클럽에 남긴 **내 기록도** 조회에서 빠진다 (지우는 것은 된다, 아래 DELETE)
+- 보이지 않는 기록은 “없는 기록”과 응답이 같다 (`404 VISIT_NOT_FOUND`). 있다는 사실도 드러내지 않는다
+- 수정·삭제는 작성자 본인만. 남의 기록이 내게 보이면 `403 FORBIDDEN`, 안 보이면 `404 VISIT_NOT_FOUND`
+- 평가는 `AGAIN`(또 갈래) / `OKAY`(괜찮아) / `NOPE`(한 번은) 세 가지뿐이다
+
+### 기록 응답 (`Visit`)
+
+```json
+{
+  "id": 41,
+  "place": {
+    "id": 12, "name": "망원동 김반장", "address": "서울 마포구 포은로 1", "category": "곱창,막창",
+    "coordinate": { "lat": 37.5563, "lng": 126.9236 }
+  },
+  "club": { "id": 3, "name": "동네친구들", "color": "SAGE" },
+  "author": { "id": 7, "name": "지현", "avatarUrl": null },
+  "rating": "AGAIN",
+  "memo": "막창 최고",
+  "visibility": "CLUB",
+  "visitedAt": "2026-09-30T12:00:00Z",
+  "createdAt": "2026-09-30T12:05:00Z",
+  "thumbnailUrl": "https://cdn.example/t1.jpg",
+  "mine": false,
+  "distanceMeters": null
+}
+```
+
+| 필드 | 타입 | 설명 |
+|---|---|---|
+| `club` | object \| null | 클럽 없이 남긴 기록이면 `null` |
+| `memo` | string \| null | 한 줄 메모 (최대 200자) |
+| `visibility` | `"CLUB"` \| `"PRIVATE"` | |
+| `thumbnailUrl` | string \| null | 썸네일. 원본 사진은 서버에 없다 |
+| `mine` | boolean | 내가 쓴 기록인지 (수정·삭제 버튼 노출 기준) |
+| `distanceMeters` | number \| null | 주변 조회(`/nearby`)에서만 기준 좌표로부터의 직선거리. 그 밖에는 `null` |
+
+### POST /api/visits — 기록 남기기
+
+요청
+
+```json
+{
+  "placeId": 12,
+  "clubId": 3,
+  "rating": "AGAIN",
+  "memo": "막창 최고",
+  "visitedAt": "2026-09-30T12:00:00Z",
+  "visibility": "CLUB",
+  "thumbnailUrl": "https://cdn.example/t1.jpg"
+}
+```
+
+| 필드 | 타입 | 필수 | 설명 |
+|---|---|---|---|
+| `placeId` | number | O | 장소 ID (`/api/places/nearby`·`/search` 결과) |
+| `clubId` | number | | 기록을 남길 클럽. **내가 멤버인 클럽만.** 없으면 나만 보는 기록 |
+| `rating` | string | O | `AGAIN` / `OKAY` / `NOPE` |
+| `memo` | string | | 최대 200자. 앞뒤 공백을 지우고, 비면 `null` |
+| `visitedAt` | string | O | 방문 시각 (ISO 8601). 하루 넘게 미래면 거부 |
+| `visibility` | string | | 없으면 `clubId`가 있을 때 `CLUB`, 없을 때 `PRIVATE`. `CLUB`이면 `clubId` 필수 |
+| `thumbnailUrl` | string | | `https://` 주소, 최대 500자 |
+
+응답 `201`: `{ "success": true, "data": Visit }`
+
+에러
+
+| HTTP | code | 상황 |
+|---|---|---|
+| 400 | `INVALID_INPUT` | 필수 값 누락, 평가 값 오류, 메모 200자 초과, https가 아닌 썸네일, 미래 시각, `CLUB`인데 `clubId` 없음 |
+| 404 | `CLUB_NOT_FOUND` | 내가 멤버가 아닌 클럽 (없는 클럽과 구분하지 않음) |
+| 404 | `PLACE_NOT_FOUND` | 없는 장소, 또는 다른 클럽의 커스텀 장소 |
+
+### GET /api/visits/map — 지도 영역의 핀
+
+지도에 보이는 영역 안의 기록을 핀으로 준다. **지도 이동이 멈춘 뒤 호출한다** (디바운스 300ms 이상).
+
+쿼리 파라미터
+
+| 이름 | 타입 | 필수 | 설명 |
+|---|---|---|---|
+| `swLat`, `swLng` | number | O | 영역 남서쪽 끝 |
+| `neLat`, `neLng` | number | O | 영역 북동쪽 끝. `sw`보다 북동쪽이어야 한다 |
+| `clubIds` | number[] | | 이 클럽들만 (`clubIds=3,5`). 내가 속하지 않은 클럽 ID는 아무것도 돌려주지 않는다 |
+
+```
+GET /api/visits/map?swLat=37.40&swLng=126.75&neLat=37.70&neLng=127.20
+```
+
+응답 `200`
+
+```json
+{
+  "success": true,
+  "data": [
+    { "id": 41, "placeId": 12, "coordinate": { "lat": 37.5563, "lng": 126.9236 },
+      "clubColor": "SAGE", "rating": "AGAIN", "thumbnailUrl": "https://cdn.example/t1.jpg" }
+  ]
+}
+```
+
+- 핀은 가볍게 둔다. 메모·작성자 같은 상세는 장소별 기록(`/api/places/{placeId}/visits`)으로 받는다
+- 기록 하나가 핀 하나다. 같은 장소의 기록은 `placeId`로 묶어 그린다
+- `clubColor`는 클럽 없이 남긴 기록이면 `null`
+- 최근 방문순 최대 500개. 넓은 영역(전국)의 클러스터 집계는 아직 없다
+- 「한 번은」(`NOPE`)도 내려준다. 기본 숨김은 화면에서 처리한다
+
+### GET /api/visits/nearby — 주변 기록
+
+기준 좌표 반경 안의 기록을 **가까운 순**으로 준다 (「내 근처 맛집」).
+
+| 이름 | 타입 | 필수 | 설명 |
+|---|---|---|---|
+| `lat`, `lng` | number | O | 기준 좌표 |
+| `radius` | number | | 미터. 1 ~ 20000, 기본 1000 |
+| `rating` | string[] | | 이 평가만 (`rating=AGAIN` 또는 `rating=AGAIN,OKAY`) |
+
+응답 `200`: `{ "success": true, "data": [Visit, ...] }` (최대 100개, `distanceMeters` 포함)
+
+### GET /api/places/{placeId}/visits — 장소의 기록
+
+장소 상세 화면용. 그 장소에 남은, **내게 보이는** 기록만 최근 방문순으로 준다 (최대 100개).
+보이는 기록이 없으면 빈 배열이다.
+
+에러: `404 PLACE_NOT_FOUND` (없는 장소, 또는 다른 클럽의 커스텀 장소)
+
+### GET /api/visits/me — 내 기록
+
+내 지도용. 내가 쓴 기록 중 지금 보이는 것만 최근 방문순으로 준다. 커서 페이지네이션.
+
+| 이름 | 타입 | 필수 | 설명 |
+|---|---|---|---|
+| `cursor` | string | | 이전 응답의 `nextCursor`. 첫 페이지면 빼고 보낸다 |
+| `size` | number | | 1 ~ 100, 기본 30 |
+
+응답 `200`
+
+```json
+{ "success": true, "data": { "items": [Visit, ...], "nextCursor": "MjAyNi0wOS0..." } }
+```
+
+- `nextCursor`가 `null`이면 마지막 페이지다. 커서는 해석하지 말고 그대로 돌려준다
+- 페이지 사이에 기록이 추가·삭제돼도 건너뛰거나 겹치지 않는다
+- 잘못된 커서는 `400 INVALID_INPUT`
+
+### PATCH /api/visits/{visitId} — 내 기록 고치기
+
+평가와 메모만 고친다. 보낸 필드만 바뀐다.
+
+```json
+{ "rating": "OKAY", "memo": "" }
+```
+
+| 필드 | 설명 |
+|---|---|
+| `rating` | 바꿀 평가 |
+| `memo` | 바꿀 메모 (최대 200자). `""`이면 메모를 지운다. 필드를 빼면 그대로 |
+
+응답 `200`: `{ "success": true, "data": Visit }`
+
+에러
+
+| HTTP | code | 상황 |
+|---|---|---|
+| 403 | `FORBIDDEN` | 내게 보이는 남의 기록 |
+| 404 | `VISIT_NOT_FOUND` | 없는 기록, 내게 보이지 않는 기록 (탈퇴한 클럽의 내 기록 포함) |
+
+### DELETE /api/visits/{visitId} — 내 기록 지우기
+
+응답 `200`: `{ "success": true }`. 썸네일도 함께 지운다.
+
+- 탈퇴한 클럽에 남긴 **내 기록도 지울 수 있다** (기획서 C-04 “내 기록 삭제”)
+
+에러: `403 FORBIDDEN` (내게 보이는 남의 기록) / `404 VISIT_NOT_FOUND` (없거나 보이지 않는 기록)
