@@ -52,9 +52,13 @@ export default function RootLayout() {
         <Stack.Protected guard={signedIn}>
           <Stack.Screen name="index" />
           <Stack.Screen name="profile" />
+          <Stack.Screen name="clubs/index" />
+          <Stack.Screen name="clubs/new" />
+          <Stack.Screen name="clubs/[clubId]" />
         </Stack.Protected>
-        {/* 카카오 콜백은 로그인 전에 열리므로 막지 않는다 */}
+        {/* 카카오 콜백과 초대 링크는 로그인 전에 열리므로 막지 않는다 */}
         <Stack.Screen name="auth/kakao/callback" />
+        <Stack.Screen name="invite/[code]" />
       </Stack>
     </QueryClientProvider>
   );
