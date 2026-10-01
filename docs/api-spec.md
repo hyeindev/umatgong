@@ -86,6 +86,11 @@ Authorization: Bearer {accessToken}
 | `FORBIDDEN` | 403 | 권한 없음 |
 | `NOT_FOUND` | 404 | 없는 경로·리소스 |
 | `METHOD_NOT_ALLOWED` | 405 | 지원하지 않는 HTTP 메서드 |
+| `CLUB_NOT_FOUND` | 404 | 없는 클럽이거나 내가 속하지 않은 클럽 (둘을 구분하지 않는다) |
+| `INVALID_INVITE_CODE` | 404 | 없는 초대 코드, 재발급으로 무효가 된 코드 |
+| `ALREADY_CLUB_MEMBER` | 409 | 이미 그 클럽의 멤버 |
+| `CLUB_FULL` | 409 | 클럽 정원이 다 참. 새 초대·합류만 막힌다 |
+| `CLUB_LIMIT_REACHED` | 409 | 한 사람이 속할 수 있는 클럽 수를 넘음 |
 | `KAKAO_UNAVAILABLE` | 502 | 카카오 서버 장애·타임아웃·호출 한도 초과. 잠시 후 재시도 |
 | `INTERNAL_ERROR` | 500 | 서버 오류 |
 
@@ -368,3 +373,160 @@ GET /api/places/search?query=김반장&lat=37.5556&lng=126.9106
 | 400 | `INVALID_INPUT` | `query` 누락·공백, `lat`/`lng` 중 하나만 보냄, 범위 밖 |
 | 401 | `UNAUTHORIZED` 등 | 액세스 토큰 없음·만료 |
 | 502 | `KAKAO_UNAVAILABLE` | 카카오 장애·타임아웃·호출 한도 초과 |
+
+---
+
+## 4. 클럽 (`/api/clubs`)
+
+모든 API에 **액세스 토큰이 필요하다.**
+
+- **클럽 경계:** 클럽 정보는 그 클럽 멤버에게만 보인다. 멤버가 아니면 없는 클럽과 똑같이 `404 CLUB_NOT_FOUND`다.
+  다른 클럽이 있다는 사실도 드러내지 않는다
+- **정원:** 요금제별 정원(무료 8명, 유료 30명)이 다 차면 **새 초대와 합류만 막는다.** 기존 멤버는 그대로 쓴다
+- **클럽 수:** 한 사람은 정해진 수(무료 1개)까지만 클럽에 속할 수 있다. 넘으면 생성·합류가 `CLUB_LIMIT_REACHED`다
+- 정원·클럽 수는 서버 설정값이다(기획서 9장). 응답의 `maxMembers`를 보고 화면에 그린다. 숫자를 프론트에 박지 않는다
+- 과금은 아직 켜지 않았다. 클럽 수 제한은 무료 기준을 쓴다
+
+### 클럽 응답 (`Club`)
+
+```json
+{
+  "id": 3,
+  "name": "동네친구들",
+  "color": "SAGE",
+  "memberCount": 5,
+  "maxMembers": 8,
+  "full": false,
+  "owner": true,
+  "createdAt": "2026-10-01T00:00:00Z"
+}
+```
+
+| 필드 | 타입 | 설명 |
+|---|---|---|
+| `id` | number | 클럽 ID |
+| `name` | string | 클럽 이름 (1~30자) |
+| `color` | `"SAGE"` \| `"SKY"` \| `"SAND"` \| `"LILAC"` | 클럽 색 토큰 이름. 실제 색값은 프론트 테마(`colors.club`)가 가진다. 빨강 계열은 없다 |
+| `memberCount` | number | 지금 멤버 수 |
+| `maxMembers` | number | 이 클럽 요금제의 정원 |
+| `full` | boolean | 정원이 다 찼는지. `true`면 초대·합류가 막힌다 (“정원 꽉 참” 안내) |
+| `owner` | boolean | 요청한 사람이 클럽장인지 |
+| `createdAt` | string | ISO 8601 UTC |
+
+**색 자동 배정:** 만드는 사람이 이미 속한 클럽과 겹치지 않는 색을 `SAGE → SKY → SAND → LILAC` 순서로 고른다.
+네 색을 다 쓰고 있으면 가장 적게 쓰인 색이다.
+
+### POST /api/clubs — 클럽 만들기
+
+만든 사람이 첫 멤버이자 클럽장이 된다. 초대 코드도 함께 만들어진다 (초대 API로 받는다).
+
+요청
+
+```json
+{ "name": "동네친구들" }
+```
+
+| 필드 | 타입 | 필수 | 설명 |
+|---|---|---|---|
+| `name` | string | O | 1~30자. 앞뒤 공백은 지운다. 공백만은 안 됨 |
+
+응답 `201`: `{ "success": true, "data": Club }`
+
+에러
+
+| HTTP | code | 상황 |
+|---|---|---|
+| 400 | `INVALID_INPUT` | 이름이 비었거나 30자 초과 |
+| 409 | `CLUB_LIMIT_REACHED` | 이미 속할 수 있는 만큼 클럽에 속해 있음 |
+
+### GET /api/clubs — 내가 속한 클럽 목록
+
+응답 `200`: `{ "success": true, "data": [Club, ...] }`. 들어간 순서. 없으면 빈 배열.
+
+### POST /api/clubs/{clubId}/invite — 초대 코드
+
+이 클럽의 초대 코드를 돌려준다. 프론트가 코드로 초대 링크를 만들어 공유한다. **클럽 멤버만** 부를 수 있다.
+
+- 초대 코드는 추측할 수 없는 32자 무작위 문자열(`[A-Za-z0-9_-]`)이다. 순번·숫자가 아니다
+- 본문 없이 부르면 **지금 코드**를 그대로 준다. 이미 보낸 링크는 계속 통한다
+- `{"reissue": true}`면 새 코드를 만들고 **이전 코드는 즉시 무효**가 된다 (링크가 퍼졌을 때). 클럽장만 할 수 있다
+- 정원이 다 찼으면 코드를 주지 않는다
+
+요청 (선택)
+
+```json
+{ "reissue": true }
+```
+
+응답 `200`
+
+```json
+{ "success": true, "data": { "inviteCode": "q2Vw...32자", "memberCount": 5, "maxMembers": 8 } }
+```
+
+에러
+
+| HTTP | code | 상황 |
+|---|---|---|
+| 403 | `FORBIDDEN` | 클럽장이 아닌데 `reissue: true` |
+| 404 | `CLUB_NOT_FOUND` | 없는 클럽, 또는 내가 멤버가 아닌 클럽 |
+| 409 | `CLUB_FULL` | 정원이 다 참 |
+
+### POST /api/clubs/join — 초대 코드로 합류
+
+요청
+
+```json
+{ "inviteCode": "q2Vw...32자" }
+```
+
+응답 `200`: `{ "success": true, "data": Club }` (합류한 클럽)
+
+검사 순서: 코드 확인 → 이미 멤버인지 → 정원 → 내 클럽 수.
+같은 클럽의 마지막 자리에 여러 명이 동시에 들어와도 정원을 넘지 않는다 (한 명만 성공, 나머지는 `CLUB_FULL`).
+
+에러
+
+| HTTP | code | 상황 |
+|---|---|---|
+| 400 | `INVALID_INPUT` | 코드가 비었거나 64자 초과 |
+| 404 | `INVALID_INVITE_CODE` | 없는 코드, 재발급으로 무효가 된 코드 |
+| 409 | `ALREADY_CLUB_MEMBER` | 이미 이 클럽의 멤버 |
+| 409 | `CLUB_FULL` | 정원이 다 참 |
+| 409 | `CLUB_LIMIT_REACHED` | 이미 속할 수 있는 만큼 클럽에 속해 있음 |
+
+### GET /api/clubs/{clubId}/members — 멤버 목록
+
+**클럽 멤버만** 볼 수 있다. 들어온 순서.
+
+응답 `200`
+
+```json
+{
+  "success": true,
+  "data": [
+    { "userId": 7, "name": "지현", "avatarUrl": "https://k.kakaocdn.net/...", "owner": true, "joinedAt": "2026-10-01T00:00:00Z" }
+  ]
+}
+```
+
+| 필드 | 타입 | 설명 |
+|---|---|---|
+| `userId` | number | 사용자 ID |
+| `name` | string | 카카오 닉네임 |
+| `avatarUrl` | string \| null | 프로필 사진 |
+| `owner` | boolean | 클럽장인지 |
+| `joinedAt` | string | ISO 8601 UTC |
+
+에러: `404 CLUB_NOT_FOUND` (없는 클럽, 또는 내가 멤버가 아닌 클럽)
+
+### DELETE /api/clubs/{clubId}/members/me — 탈퇴
+
+이 클럽에서 나간다. 응답 `200`: `{ "success": true }`
+
+- 클럽장이 나가면 클럽장 자리만 비고 클럽과 남은 멤버는 그대로다. 이후 초대 코드 재발급은 할 수 없지만 지금 코드로 초대는 계속된다
+- 마지막 멤버가 나가도 클럽은 지우지 않는다 (그 클럽에 남긴 기록이 클럽을 참조한다)
+- 탈퇴하면 클럽 수 제한에서 빠진다
+- 탈퇴해도 그 클럽에 남긴 내 기록은 아직 지우지 않는다 (기록 API와 함께 정한다, 기획서 C-04)
+
+에러: `404 CLUB_NOT_FOUND` (없는 클럽, 또는 내가 멤버가 아닌 클럽)
