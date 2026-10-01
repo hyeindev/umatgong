@@ -7,6 +7,9 @@
     // 타입 검사는 네이티브 쪽으로 해석한다. 웹 파일은 같은 *.types.ts 타입을
     // 명시해서 두 구현이 같은 인터페이스를 지키는지 함께 검사된다.
     "moduleSuffixes": [".native", ""],
+    // 순수 로직 테스트는 node --test로 빌드 없이 돌린다. Node는 확장자 없는 import를 찾지 못하므로
+    // 테스트 파일에서만 './foo.ts'처럼 확장자를 붙인다.
+    "allowImportingTsExtensions": true,
     "paths": {
       "@/*": ["./src/*"]
     }

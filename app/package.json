@@ -24,6 +24,7 @@
     "zustand": "^5.0.15"
   },
   "devDependencies": {
+    "@types/node": "^22.20.4",
     "@types/react": "~19.2.2",
     "eslint": "^9.39.5",
     "eslint-config-expo": "~57.0.2",
@@ -39,6 +40,7 @@
     "build:web": "expo export -p web",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
+    "test": "node --test --experimental-strip-types --no-warnings=ExperimentalWarning \"src/**/*.test.ts\"",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },

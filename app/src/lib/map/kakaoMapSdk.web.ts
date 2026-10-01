@@ -5,8 +5,15 @@ const JS_KEY = process.env.EXPO_PUBLIC_KAKAO_JS_KEY;
 /** 쓰는 기능만 적은 최소 타입 */
 export type KakaoLatLng = { getLat: () => number; getLng: () => number };
 
+export type KakaoLatLngBounds = {
+  getSouthWest: () => KakaoLatLng;
+  getNorthEast: () => KakaoLatLng;
+};
+
 export type KakaoMap = {
   setBounds: (bounds: unknown) => void;
+  getBounds: () => KakaoLatLngBounds;
+  getLevel: () => number;
   setCenter: (latLng: KakaoLatLng) => void;
   setLevel: (level: number, options?: { animate?: boolean }) => void;
   panTo: (latLng: KakaoLatLng) => void;
@@ -21,7 +28,7 @@ export type KakaoCustomOverlay = {
 export type KakaoMaps = {
   load: (callback: () => void) => void;
   LatLng: new (lat: number, lng: number) => KakaoLatLng;
-  LatLngBounds: new (sw: KakaoLatLng, ne: KakaoLatLng) => unknown;
+  LatLngBounds: new (sw: KakaoLatLng, ne: KakaoLatLng) => KakaoLatLngBounds;
   Map: new (container: HTMLElement, options: { center: KakaoLatLng; level: number }) => KakaoMap;
   CustomOverlay: new (options: {
     position: KakaoLatLng;
@@ -29,7 +36,13 @@ export type KakaoMaps = {
     xAnchor?: number;
     yAnchor?: number;
     zIndex?: number;
+    /** true면 오버레이를 눌러도 지도의 클릭·드래그가 시작되지 않는다 */
+    clickable?: boolean;
   }) => KakaoCustomOverlay;
+  event: {
+    addListener: (target: KakaoMap, type: 'idle', handler: () => void) => void;
+    removeListener: (target: KakaoMap, type: 'idle', handler: () => void) => void;
+  };
 };
 
 declare global {

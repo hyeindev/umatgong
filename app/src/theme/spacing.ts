@@ -62,6 +62,8 @@ export const size = {
   button: 56,
   /** 지도 위 떠 있는 원형·사각 버튼 (현재 위치, 프로필) */
   floatingButton: 48,
+  /** 칩 안의 클럽 색 점 */
+  chipDot: 7,
   avatar: {
     /** 카드 안에 겹쳐 놓는 작은 아바타 */
     xs: 18,
