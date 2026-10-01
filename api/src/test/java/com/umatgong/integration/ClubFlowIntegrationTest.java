@@ -3,6 +3,7 @@ package com.umatgong.integration;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -367,7 +368,207 @@ class ClubFlowIntegrationTest {
 		perform(post("/api/clubs/join"), user, joinBody(code)).andExpect(status().isOk());
 	}
 
+
+	// ── 클럽 색 변경 ──
+
+	@Test
+	void 클럽장은_클럽_색을_바꿀_수_있다() throws Exception {
+		String owner = newUser("지현");
+		long clubId = createClub(owner, "동네친구들");
+
+		JsonNode updated = data(perform(patch("/api/clubs/" + clubId), owner, "{\"color\":\"LILAC\"}")
+			.andExpect(status().isOk()));
+
+		assertThat(updated.get("color").asText()).isEqualTo("LILAC");
+		assertThat(updated.get("owner").asBoolean()).isTrue();
+		assertThat(clubColor(clubId)).isEqualTo("LILAC");
+		assertThat(data(perform(get("/api/clubs"), owner, null)).get(0).get("color").asText()).isEqualTo("LILAC");
+	}
+
+	@Test
+	void 클럽장이_아닌_멤버는_색을_바꿀_수_없다() throws Exception {
+		String owner = newUser("지현");
+		String member = newUser("민기");
+		long clubId = createClub(owner, "동네친구들");
+		join(member, inviteCode(owner, clubId));
+
+		perform(patch("/api/clubs/" + clubId), member, "{\"color\":\"SKY\"}")
+			.andExpect(status().isForbidden())
+			.andExpect(jsonPath("$.error.code").value("FORBIDDEN"));
+
+		assertThat(clubColor(clubId)).isEqualTo("SAGE");
+	}
+
+	@Test
+	void 다른_클럽_사용자가_색을_바꾸려_하면_없는_클럽과_같은_404() throws Exception {
+		String owner = newUser("지현");
+		String outsider = newUser("남");
+		long clubId = createClub(owner, "동네친구들");
+		createClub(outsider, "다른클럽");
+
+		perform(patch("/api/clubs/" + clubId), outsider, "{\"color\":\"SKY\"}")
+			.andExpect(status().isNotFound())
+			.andExpect(jsonPath("$.error.code").value("CLUB_NOT_FOUND"));
+		perform(patch("/api/clubs/999999"), outsider, "{\"color\":\"SKY\"}")
+			.andExpect(status().isNotFound())
+			.andExpect(jsonPath("$.error.code").value("CLUB_NOT_FOUND"));
+
+		assertThat(clubColor(clubId)).isEqualTo("SAGE");
+	}
+
+	@Test
+	void 팔레트_밖의_색이나_빈_값은_INVALID_INPUT() throws Exception {
+		String owner = newUser("지현");
+		long clubId = createClub(owner, "동네친구들");
+
+		perform(patch("/api/clubs/" + clubId), owner, "{\"color\":\"RED\"}")
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.error.code").value("INVALID_INPUT"));
+		perform(patch("/api/clubs/" + clubId), owner, "{}")
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.error.code").value("INVALID_INPUT"));
+
+		assertThat(clubColor(clubId)).isEqualTo("SAGE");
+	}
+
+	@Test
+	void 클럽장이_나간_클럽은_남은_멤버도_색을_바꿀_수_없다() throws Exception {
+		String owner = newUser("지현");
+		String member = newUser("민기");
+		long clubId = createClub(owner, "동네친구들");
+		join(member, inviteCode(owner, clubId));
+		perform(delete("/api/clubs/" + clubId + "/members/me"), owner, null).andExpect(status().isOk());
+
+		perform(patch("/api/clubs/" + clubId), member, "{\"color\":\"SKY\"}").andExpect(status().isForbidden());
+		// 나간 클럽장은 이제 멤버가 아니다
+		perform(patch("/api/clubs/" + clubId), owner, "{\"color\":\"SKY\"}").andExpect(status().isNotFound());
+
+		assertThat(clubColor(clubId)).isEqualTo("SAGE");
+	}
+
+	// ── 기록 수 ──
+
+	@Test
+	void 클럽_기록_수는_공개_기록만_세고_멤버_누구에게나_같다() throws Exception {
+		VisitFixture f = visitFixture();
+
+		// 공개 기록: 지현 2 + 민기 1. 비공개(지현 1, 민기 2)와 클럽 없는 기록, 다른 클럽 기록은 세지 않는다
+		assertThat(clubOf(f.jihyun, f.friendsClub).get("visitCount").asLong()).isEqualTo(3);
+		assertThat(clubOf(f.mingi, f.friendsClub).get("visitCount").asLong()).isEqualTo(3);
+		assertThat(clubOf(f.outsider, f.otherClub).get("visitCount").asLong()).isEqualTo(4);
+		// 다른 클럽 사용자의 목록에는 이 클럽이 아예 없다
+		assertThat(data(perform(get("/api/clubs"), f.outsider, null))).hasSize(1);
+	}
+
+	@Test
+	void 멤버별_기록_수는_남의_비공개를_세지_않고_내_비공개는_센다() throws Exception {
+		VisitFixture f = visitFixture();
+
+		// 지현이 보면: 지현 = 공개 2 + 내 비공개 1, 민기 = 공개 1 (민기의 비공개 2개는 안 보인다)
+		assertThat(memberVisitCounts(f.jihyun, f.friendsClub)).containsExactly("지현=3", "민기=1");
+		// 민기가 보면: 지현 = 공개 2, 민기 = 공개 1 + 내 비공개 2
+		assertThat(memberVisitCounts(f.mingi, f.friendsClub)).containsExactly("지현=2", "민기=3");
+	}
+
+	@Test
+	void 다른_클럽_사용자는_이_클럽의_기록_수를_어떤_경로로도_볼_수_없다() throws Exception {
+		VisitFixture f = visitFixture();
+
+		perform(get("/api/clubs/" + f.friendsClub + "/members"), f.outsider, null)
+			.andExpect(status().isNotFound())
+			.andExpect(jsonPath("$.error.code").value("CLUB_NOT_FOUND"));
+		perform(patch("/api/clubs/" + f.friendsClub), f.outsider, "{\"color\":\"SKY\"}")
+			.andExpect(status().isNotFound());
+	}
+
+	@Test
+	void 합류하면_합류_응답에도_지금까지의_공개_기록_수가_온다() throws Exception {
+		VisitFixture f = visitFixture();
+		String newcomer = newUser("세영");
+
+		JsonNode joined = data(perform(post("/api/clubs/join"), newcomer, joinBody(inviteCode(f.jihyun, f.friendsClub)))
+			.andExpect(status().isOk()));
+
+		assertThat(joined.get("visitCount").asLong()).isEqualTo(3);
+		// 새 멤버에게는 남의 비공개가 하나도 안 보인다
+		assertThat(memberVisitCounts(newcomer, f.friendsClub)).containsExactly("지현=2", "민기=1", "세영=0");
+	}
+
+	@Test
+	void 새로_만든_클럽은_기록_수가_0이다() throws Exception {
+		String owner = newUser("지현");
+
+		JsonNode club = data(perform(post("/api/clubs"), owner, "{\"name\":\"새클럽\"}").andExpect(status().isCreated()));
+
+		assertThat(club.get("visitCount").asLong()).isZero();
+		assertThat(memberVisitCounts(owner, club.get("id").asLong())).containsExactly("지현=0");
+	}
+
 	// ── 도우미 ──
+
+	/**
+	 * 지현·민기는 “동네친구들”, 남은 “다른클럽”.
+	 * 동네친구들: 지현 공개 2·비공개 1, 민기 공개 1·비공개 2. 지현은 클럽 없는 기록도 1.
+	 * 다른클럽: 남 공개 4.
+	 */
+	private record VisitFixture(String jihyun, String mingi, String outsider, long friendsClub, long otherClub) {
+	}
+
+	private VisitFixture visitFixture() throws Exception {
+		String jihyun = newUser("지현");
+		String mingi = newUser("민기");
+		String outsider = newUser("남");
+		long friendsClub = createClub(jihyun, "동네친구들");
+		join(mingi, inviteCode(jihyun, friendsClub));
+		long otherClub = createClub(outsider, "다른클럽");
+		long place = jdbc.queryForObject("""
+			insert into places (name, coordinate, category, source, external_id)
+			values ('망원동 김반장', ST_SetSRID(ST_MakePoint(126.9236, 37.5563), 4326)::geography, '음식점', 'API', 'k-1')
+			returning id""", Long.class);
+		long jihyunId = userIdOf("지현");
+		long mingiId = userIdOf("민기");
+		long outsiderId = userIdOf("남");
+		insertVisits(jihyunId, place, friendsClub, "CLUB", 2);
+		insertVisits(jihyunId, place, friendsClub, "PRIVATE", 1);
+		insertVisits(jihyunId, place, null, "PRIVATE", 1);
+		insertVisits(mingiId, place, friendsClub, "CLUB", 1);
+		insertVisits(mingiId, place, friendsClub, "PRIVATE", 2);
+		insertVisits(outsiderId, place, otherClub, "CLUB", 4);
+		return new VisitFixture(jihyun, mingi, outsider, friendsClub, otherClub);
+	}
+
+	private void insertVisits(long userId, long placeId, Long clubId, String visibility, int count) {
+		for (int i = 0; i < count; i++) {
+			jdbc.update("insert into visits (user_id, place_id, club_id, rating, visited_at, visibility) "
+				+ "values (?, ?, ?, 'AGAIN', now(), ?)", userId, placeId, clubId, visibility);
+		}
+	}
+
+	private long userIdOf(String name) {
+		return jdbc.queryForObject("select id from users where name = ?", Long.class, name);
+	}
+
+	private String clubColor(long clubId) {
+		return jdbc.queryForObject("select color from clubs where id = ?", String.class, clubId);
+	}
+
+	private JsonNode clubOf(String token, long clubId) throws Exception {
+		for (JsonNode club : data(perform(get("/api/clubs"), token, null).andExpect(status().isOk()))) {
+			if (club.get("id").asLong() == clubId) {
+				return club;
+			}
+		}
+		throw new AssertionError("club " + clubId + " not in list");
+	}
+
+	private List<String> memberVisitCounts(String token, long clubId) throws Exception {
+		List<String> counts = new ArrayList<>();
+		for (JsonNode member : data(perform(get("/api/clubs/" + clubId + "/members"), token, null)
+			.andExpect(status().isOk()))) {
+			counts.add(member.get("name").asText() + "=" + member.get("visitCount").asLong());
+		}
+		return counts;
+	}
 
 	private String newUser(String name) {
 		User user = userRepository.save(User.signUpWithKakao(kakaoIdSeq++, name, null));

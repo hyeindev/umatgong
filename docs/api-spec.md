@@ -400,6 +400,7 @@ GET /api/places/search?query=김반장&lat=37.5556&lng=126.9106
   "maxMembers": 8,
   "full": false,
   "owner": true,
+  "visitCount": 68,
   "createdAt": "2026-10-01T00:00:00Z"
 }
 ```
@@ -413,6 +414,7 @@ GET /api/places/search?query=김반장&lat=37.5556&lng=126.9106
 | `maxMembers` | number | 이 클럽 요금제의 정원 |
 | `full` | boolean | 정원이 다 찼는지. `true`면 초대·합류가 막힌다 (“정원 꽉 참” 안내) |
 | `owner` | boolean | 요청한 사람이 클럽장인지 |
+| `visitCount` | number | 이 클럽의 **공개(`CLUB`) 기록 수** (화면의 “함께 모은 곳”). 비공개 기록은 쓴 사람 본인에게도 세지 않는다 — 멤버 누구에게나 같은 숫자다. 탈퇴한 멤버가 남긴 공개 기록도 센다 (지도에 보이는 것과 같다) |
 | `createdAt` | string | ISO 8601 UTC |
 
 **색 자동 배정:** 만드는 사람이 이미 속한 클럽과 겹치지 않는 색을 `SAGE → SKY → SAND → LILAC` 순서로 고른다.
@@ -507,7 +509,7 @@ GET /api/places/search?query=김반장&lat=37.5556&lng=126.9106
 {
   "success": true,
   "data": [
-    { "userId": 7, "name": "지현", "avatarUrl": "https://k.kakaocdn.net/...", "owner": true, "joinedAt": "2026-10-01T00:00:00Z" }
+    { "userId": 7, "name": "지현", "avatarUrl": "https://k.kakaocdn.net/...", "owner": true, "visitCount": 24, "joinedAt": "2026-10-01T00:00:00Z" }
   ]
 }
 ```
@@ -518,9 +520,37 @@ GET /api/places/search?query=김반장&lat=37.5556&lng=126.9106
 | `name` | string | 카카오 닉네임 |
 | `avatarUrl` | string \| null | 프로필 사진 |
 | `owner` | boolean | 클럽장인지 |
+| `visitCount` | number | 이 멤버가 이 클럽에 남긴 기록 중 **요청자에게 보이는 것**의 수. 남의 비공개 기록은 세지 않고, 요청자 본인 것은 비공개도 센다. 그래서 보는 사람마다 숫자가 다를 수 있다 |
 | `joinedAt` | string | ISO 8601 UTC |
 
 에러: `404 CLUB_NOT_FOUND` (없는 클럽, 또는 내가 멤버가 아닌 클럽)
+
+### PATCH /api/clubs/{clubId} — 클럽 색 바꾸기
+
+**클럽장만** 할 수 있다. 클럽장이 탈퇴해 클럽장이 없는 클럽은 아무도 바꿀 수 없다.
+
+요청
+
+```json
+{ "color": "LILAC" }
+```
+
+| 필드 | 타입 | 필수 | 설명 |
+|---|---|---|---|
+| `color` | string | O | `SAGE` / `SKY` / `SAND` / `LILAC` |
+
+응답 `200`: `{ "success": true, "data": Club }` (바뀐 클럽)
+
+- 바꾼 색은 모든 멤버의 지도 핀·칩에 반영된다 (지도 핀은 캐시가 지나면 새로 받는다)
+- 다른 클럽과 색이 겹쳐도 막지 않는다. 자동 배정만 겹치지 않게 고른다
+
+에러
+
+| HTTP | code | 상황 |
+|---|---|---|
+| 400 | `INVALID_INPUT` | `color`가 없거나 팔레트 밖의 값 |
+| 403 | `FORBIDDEN` | 멤버지만 클럽장이 아님 (클럽장이 없는 클럽 포함) |
+| 404 | `CLUB_NOT_FOUND` | 없는 클럽, 또는 내가 멤버가 아닌 클럽 |
 
 ### DELETE /api/clubs/{clubId}/members/me — 탈퇴
 
