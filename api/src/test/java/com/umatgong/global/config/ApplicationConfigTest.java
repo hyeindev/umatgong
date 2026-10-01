@@ -32,6 +32,7 @@ class ApplicationConfigTest {
 		assertThat(raw("umatgong.jwt.secret")).isEqualTo("${JWT_SECRET:}");
 		assertThat(raw("umatgong.kakao.rest-api-key")).isEqualTo("${KAKAO_REST_API_KEY:}");
 		assertThat(raw("umatgong.kakao.client-secret")).isEqualTo("${KAKAO_CLIENT_SECRET:}");
+		assertThat(raw("umatgong.dev.seed.token")).isEqualTo("${APP_DEV_SEED_TOKEN:}");
 	}
 
 	@Test
@@ -51,6 +52,11 @@ class ApplicationConfigTest {
 		assertThat(raw("umatgong.plan.free.max-clubs-per-user")).isEqualTo("${PLAN_FREE_MAX_CLUBS_PER_USER:1}");
 		assertThat(raw("umatgong.plan.paid.max-club-members")).isEqualTo("${PLAN_PAID_MAX_CLUB_MEMBERS:30}");
 		assertThat(raw("umatgong.plan.paid.max-clubs-per-user")).isEqualTo("${PLAN_PAID_MAX_CLUBS_PER_USER:3}");
+	}
+
+	@Test
+	void 개발용_시드_API는_기본으로_꺼져_있다() {
+		assertThat(raw("umatgong.dev.seed.enabled")).isEqualTo("${APP_DEV_SEED_ENABLED:false}");
 	}
 
 	private static String raw(String key) {
