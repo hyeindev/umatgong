@@ -68,6 +68,12 @@ export const size = {
     /** 카드 안에 겹쳐 놓는 작은 아바타 */
     xs: 18,
     sm: 36,
+    /** 멤버 목록 행 */
+    md: 42,
     lg: 72,
   },
+  /** 클럽 정원 막대의 두께 */
+  capacityBar: 8,
+  /** 클럽 목록·제목 옆의 클럽 색 점 */
+  clubDot: 10,
 } as const;

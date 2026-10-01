@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -15,6 +15,7 @@ import {
   useDebouncedValue,
   useVisitPins,
 } from '@/features/map';
+import { pendingInvite } from '@/lib/invite';
 import { location } from '@/lib/location';
 import { Map, type MapHandle, type MapMarker, type MapRegion } from '@/lib/map';
 import { useAuthStore } from '@/stores/auth';
@@ -37,6 +38,19 @@ export default function MapHomeScreen() {
   const [myLocation, setMyLocation] = useState<Coordinate | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [locating, setLocating] = useState(false);
+
+  // 로그인 전에 초대 링크를 열었다면 로그인을 마치고 여기로 온다. 맡겨 둔 코드로 합류 화면을 다시 연다
+  useEffect(() => {
+    let active = true;
+    pendingInvite.take().then((code) => {
+      if (active && code) {
+        router.push(`/invite/${code}`);
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, [router]);
 
   // 지도는 멈췄을 때만 영역을 알린다. 클러스터는 바로 다시 묶고, 조회는 디바운스한 영역으로 한다
   const [region, setRegion] = useState<MapRegion | null>(null);

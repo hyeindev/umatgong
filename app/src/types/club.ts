@@ -13,3 +13,23 @@ export type Club = {
   owner: boolean;
   createdAt: string;
 };
+
+/** GET /api/clubs/{clubId}/members 한 건 */
+export type ClubMember = {
+  userId: number;
+  name: string;
+  avatarUrl: string | null;
+  /** 클럽장인지 */
+  owner: boolean;
+  joinedAt: string;
+};
+
+/** POST /api/clubs/{clubId}/invite 응답 */
+export type ClubInvite = {
+  inviteCode: string;
+  memberCount: number;
+  maxMembers: number;
+};
+
+export type CreateClubRequest = { name: string };
+export type JoinClubRequest = { inviteCode: string };

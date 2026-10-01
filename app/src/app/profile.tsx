@@ -8,7 +8,7 @@ import { signOut } from '@/features/auth';
 import { useAuthStore } from '@/stores/auth';
 import { colors, layout, shape, size, spacing, textStyles } from '@/theme';
 
-// 프로필. 지금은 로그인 상태 확인과 로그아웃만 있다 (내 지도·클럽·설정은 이후).
+// 프로필. 로그인 상태 확인, 내 클럽, 로그아웃 (내 지도·설정은 이후).
 export default function ProfileScreen() {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
@@ -35,6 +35,14 @@ export default function ProfileScreen() {
           <Text style={styles.badgeLabel}>로그인됨</Text>
         </View>
       </View>
+
+      <Pressable
+        accessibilityRole="button"
+        onPress={() => router.push('/clubs')}
+        style={({ pressed }) => [styles.clubs, pressed && styles.pressed]}
+      >
+        <Text style={styles.clubsLabel}>내 클럽</Text>
+      </Pressable>
 
       <Pressable
         accessibilityRole="button"
@@ -91,6 +99,18 @@ const styles = StyleSheet.create({
   badgeLabel: {
     ...textStyles.label,
     color: colors.accent.on,
+  },
+  clubs: {
+    height: size.button,
+    marginBottom: spacing[2.5],
+    borderRadius: shape.button,
+    backgroundColor: colors.surface.cream,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  clubsLabel: {
+    ...textStyles.button,
+    color: colors.text.onCream.primary,
   },
   logout: {
     height: size.button,
