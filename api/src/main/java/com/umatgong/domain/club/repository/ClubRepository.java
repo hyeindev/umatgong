@@ -22,4 +22,7 @@ public interface ClubRepository extends JpaRepository<Club, Long> {
 	@Lock(LockModeType.PESSIMISTIC_WRITE)
 	@Query("select c from Club c where c.id = :id")
 	Optional<Club> findByIdForUpdate(@Param("id") Long id);
+
+	/** 개발용 시드 클럽 찾기. 클럽장이 탈퇴하면 created_by가 비므로, 찾았다면 그 사용자는 아직 멤버다 */
+	Optional<Club> findFirstByCreatedByIdAndNameOrderByIdAsc(Long userId, String name);
 }
