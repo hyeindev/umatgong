@@ -81,6 +81,11 @@ public class Club {
 		this.inviteCode = inviteCode;
 	}
 
+	// 클럽장이 탈퇴하면 클럽은 남기고 클럽장 자리만 비운다 (멤버와 기록은 그대로).
+	public void releaseOwner() {
+		this.createdBy = null;
+	}
+
 	public boolean isOwnedBy(Long userId) {
 		return createdBy != null && createdBy.getId().equals(userId);
 	}

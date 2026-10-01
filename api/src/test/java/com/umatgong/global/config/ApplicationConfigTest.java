@@ -45,6 +45,14 @@ class ApplicationConfigTest {
 		assertThat(raw("spring.datasource.username")).isEqualTo("${DB_USERNAME:}");
 	}
 
+	@Test
+	void 요금제_제한값은_설정으로_분리돼_있고_기본값은_기획서_9장과_같다() {
+		assertThat(raw("umatgong.plan.free.max-club-members")).isEqualTo("${PLAN_FREE_MAX_CLUB_MEMBERS:8}");
+		assertThat(raw("umatgong.plan.free.max-clubs-per-user")).isEqualTo("${PLAN_FREE_MAX_CLUBS_PER_USER:1}");
+		assertThat(raw("umatgong.plan.paid.max-club-members")).isEqualTo("${PLAN_PAID_MAX_CLUB_MEMBERS:30}");
+		assertThat(raw("umatgong.plan.paid.max-clubs-per-user")).isEqualTo("${PLAN_PAID_MAX_CLUBS_PER_USER:3}");
+	}
+
 	private static String raw(String key) {
 		Object value = yml.getProperty(key);
 		return value == null ? null : value.toString();
