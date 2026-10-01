@@ -29,6 +29,10 @@ public interface ClubMemberRepository extends JpaRepository<ClubMember, ClubMemb
 		+ "where m.club.id in :clubIds group by m.club.id")
 	List<MemberCount> countByClubIds(@Param("clubIds") List<Long> clubIds);
 
+	/** 지금 속한 클럽 ID. 기록 조회의 클럽 경계는 이 목록으로만 정한다 */
+	@Query("select m.club.id from ClubMember m where m.user.id = :userId")
+	List<Long> findClubIdsByUserId(@Param("userId") Long userId);
+
 	@Query("select m.club.color from ClubMember m where m.user.id = :userId")
 	List<ClubColor> findClubColorsByUserId(@Param("userId") Long userId);
 
