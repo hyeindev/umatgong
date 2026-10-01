@@ -56,3 +56,8 @@ jobs:
       - name: Lint
         if: steps.detect.outputs.ready == 'true'
         run: npm run lint
+
+      # 지도 영역·클러스터 같은 순수 로직 테스트 (node --test, 빌드 없이)
+      - name: Test
+        if: steps.detect.outputs.ready == 'true'
+        run: npm test

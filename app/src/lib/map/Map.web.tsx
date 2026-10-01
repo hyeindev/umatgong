@@ -1,7 +1,5 @@
-import { useEffect, useImperativeHandle, useRef } from 'react';
+import { useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { View } from 'react-native';
-
-import { colors } from '@/theme';
 
 import {
   loadKakaoMaps,
@@ -9,7 +7,8 @@ import {
   type KakaoMap,
   type KakaoMaps,
 } from './kakaoMapSdk.web';
-import type { MapComponent, MapZoom } from './Map.types';
+import type { MapComponent, MapMarker, MapRegion, MapZoom } from './Map.types';
+import { anchorOf, DARK_TILES, markerElement, myLocationElement, zIndexOf } from './markers.web';
 
 // 카카오맵 레벨: 1이 가장 가깝고 14가 가장 멀다. docs/화면기획서.md 4.1 줌 단계와 맞춘다
 const LEVEL: Record<MapZoom, number> = {
@@ -17,37 +16,47 @@ const LEVEL: Record<MapZoom, number> = {
   region: 9,
   neighborhood: 5,
 };
+const MIN_LEVEL = 1;
+// 클러스터를 누르면 이만큼 확대한다. 한 단계씩이면 묶음이 거의 그대로라 여러 번 눌러야 한다
+const CLUSTER_ZOOM_STEP = 2;
 
 // 카카오맵에는 어두운 지도 스타일이 없다. 타일을 반전해 디자인 시스템의 어두운 지도처럼 만든다.
-// invert와 hue-rotate(180°)는 두 번 걸면 원래대로 돌아오므로, 지도 위에 그리는 요소(내 위치 점 등)에는
-// 같은 필터를 한 번 더 걸어 원래 색으로 보이게 한다.
-const DARK_TILES = 'invert(1) hue-rotate(180deg)';
+// 지도 위 요소는 markers.web.ts에서 같은 필터를 한 번 더 걸어 원래 색으로 보이게 한다.
 const DIM_TILES = 'brightness(0.82) contrast(0.92) saturate(0.7)';
 
-const myLocationDot = () => {
-  const dot = document.createElement('div');
-  Object.assign(dot.style, {
-    width: '16px',
-    height: '16px',
-    borderRadius: '50%',
-    background: colors.pin.me,
-    boxShadow: `0 0 0 8px ${colors.pin.meHalo}`,
-    filter: DARK_TILES,
-  });
-  dot.setAttribute('aria-label', '내 위치');
-  return dot;
-};
+// 같은 id라도 모양·색·개수가 바뀌면 다시 그린다
+const signatureOf = (marker: MapMarker) => JSON.stringify(marker);
 
-export const Map: MapComponent = ({ initialBounds, myLocation, onError, style, ref }) => {
+type DrawnMarker = { overlay: KakaoCustomOverlay; signature: string };
+
+export const Map: MapComponent = ({
+  initialBounds,
+  myLocation,
+  markers,
+  onMarkerPress,
+  onRegionChange,
+  onError,
+  style,
+  ref,
+}) => {
   const containerRef = useRef<View>(null);
   const mapsRef = useRef<KakaoMaps | null>(null);
   const mapRef = useRef<KakaoMap | null>(null);
   const meRef = useRef<KakaoCustomOverlay | null>(null);
+  const drawnRef = useRef(new globalThis.Map<string, DrawnMarker>());
+  // SDK를 받기 전에 들어온 마커·내 위치도 지도가 준비되면 그리도록 effect가 이 값을 본다
+  const [ready, setReady] = useState(false);
   // 지도 생성은 처음 한 번만. 이후 바뀌는 값은 아래 effect들이 반영한다
   const initial = useRef({ initialBounds, onError });
+  // 이벤트 핸들러는 지도를 만들 때 한 번만 등록하므로 최신 콜백은 ref로 읽는다
+  const callbacks = useRef({ onMarkerPress, onRegionChange });
+  useEffect(() => {
+    callbacks.current = { onMarkerPress, onRegionChange };
+  }, [onMarkerPress, onRegionChange]);
 
   useEffect(() => {
     let cancelled = false;
+    let cleanup: (() => void) | undefined;
     loadKakaoMaps()
       .then((maps) => {
         // react-native-web의 View ref는 DOM 요소다
@@ -64,8 +73,30 @@ export const Map: MapComponent = ({ initialBounds, myLocation, onError, style, r
         map.setBounds(
           new maps.LatLngBounds(new maps.LatLng(sw.lat, sw.lng), new maps.LatLng(ne.lat, ne.lng)),
         );
+
+        // idle은 이동·확대 애니메이션이 끝났을 때 한 번만 온다. 드래그 중에는 오지 않는다
+        const emitRegion = () => {
+          const bounds = map.getBounds();
+          const southWest = bounds.getSouthWest();
+          const northEast = bounds.getNorthEast();
+          const region: MapRegion = {
+            bounds: {
+              sw: { lat: southWest.getLat(), lng: southWest.getLng() },
+              ne: { lat: northEast.getLat(), lng: northEast.getLng() },
+            },
+            width: container.clientWidth,
+            height: container.clientHeight,
+          };
+          callbacks.current.onRegionChange?.(region);
+        };
+        maps.event.addListener(map, 'idle', emitRegion);
+        cleanup = () => maps.event.removeListener(map, 'idle', emitRegion);
+
         mapsRef.current = maps;
         mapRef.current = map;
+        setReady(true);
+        // setBounds의 idle이 리스너 등록보다 먼저 지나갔을 수 있으므로 첫 영역은 직접 알린다
+        emitRegion();
       })
       .catch((error: unknown) => {
         if (!cancelled) {
@@ -76,13 +107,14 @@ export const Map: MapComponent = ({ initialBounds, myLocation, onError, style, r
       });
     return () => {
       cancelled = true;
+      cleanup?.();
     };
   }, []);
 
   useEffect(() => {
     const maps = mapsRef.current;
     const map = mapRef.current;
-    if (!maps || !map) {
+    if (!ready || !maps || !map) {
       return;
     }
     if (!myLocation) {
@@ -94,10 +126,58 @@ export const Map: MapComponent = ({ initialBounds, myLocation, onError, style, r
     if (meRef.current) {
       meRef.current.setPosition(position);
     } else {
-      meRef.current = new maps.CustomOverlay({ position, content: myLocationDot(), zIndex: 10 });
+      meRef.current = new maps.CustomOverlay({
+        position,
+        content: myLocationElement(),
+        zIndex: 10,
+      });
       meRef.current.setMap(map);
     }
-  }, [myLocation]);
+  }, [ready, myLocation]);
+
+  // 바뀐 표식만 지우고 다시 그린다. 매번 전부 지우면 지도를 옮길 때마다 핀이 깜빡인다
+  useEffect(() => {
+    const maps = mapsRef.current;
+    const map = mapRef.current;
+    if (!ready || !maps || !map) {
+      return;
+    }
+    const drawn = drawnRef.current;
+    const next = new globalThis.Map((markers ?? []).map((marker) => [marker.id, marker]));
+
+    drawn.forEach((entry, id) => {
+      const marker = next.get(id);
+      if (!marker || signatureOf(marker) !== entry.signature) {
+        entry.overlay.setMap(null);
+        drawn.delete(id);
+      }
+    });
+    next.forEach((marker, id) => {
+      if (drawn.has(id)) {
+        return;
+      }
+      const anchor = anchorOf(marker);
+      const overlay = new maps.CustomOverlay({
+        position: new maps.LatLng(marker.coordinate.lat, marker.coordinate.lng),
+        content: markerElement(marker, () => callbacks.current.onMarkerPress?.(marker)),
+        xAnchor: anchor.x,
+        yAnchor: anchor.y,
+        zIndex: zIndexOf(marker),
+        clickable: true,
+      });
+      overlay.setMap(map);
+      drawn.set(id, { overlay, signature: signatureOf(marker) });
+    });
+  }, [ready, markers]);
+
+  // 화면을 떠나면 지도 위 표식을 모두 걷는다
+  useEffect(() => {
+    const drawn = drawnRef.current;
+    return () => {
+      drawn.forEach((entry) => entry.overlay.setMap(null));
+      drawn.clear();
+    };
+  }, []);
 
   useImperativeHandle(
     ref,
@@ -109,6 +189,15 @@ export const Map: MapComponent = ({ initialBounds, myLocation, onError, style, r
           return;
         }
         map.setLevel(LEVEL[zoom]);
+        map.panTo(new maps.LatLng(center.lat, center.lng));
+      },
+      zoomInAt: (center) => {
+        const maps = mapsRef.current;
+        const map = mapRef.current;
+        if (!maps || !map) {
+          return;
+        }
+        map.setLevel(Math.max(MIN_LEVEL, map.getLevel() - CLUSTER_ZOOM_STEP));
         map.panTo(new maps.LatLng(center.lat, center.lng));
       },
     }),

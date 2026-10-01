@@ -114,6 +114,13 @@ export const colors = {
     /** 내 위치 — 크림색 점 + 옅은 후광 */
     me: palette.cream,
     meHalo: creamAlpha(0.14),
+    /**
+     * 가까운 핀 묶음(클러스터). 라임 면은 한 화면에 2개까지라 바탕은 어둡게 두고,
+     * 「또 갈래」가 들어 있는 묶음만 라임 테두리로 표시한다.
+     */
+    cluster: palette.ink700,
+    clusterLabel: palette.cream,
+    clusterAgain: palette.lime,
   },
 
   /**
