@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -19,6 +20,7 @@ import com.umatgong.domain.club.dto.CreateClubRequest;
 import com.umatgong.domain.club.dto.InviteRequest;
 import com.umatgong.domain.club.dto.InviteResponse;
 import com.umatgong.domain.club.dto.JoinClubRequest;
+import com.umatgong.domain.club.dto.UpdateClubRequest;
 import com.umatgong.domain.club.service.ClubService;
 import com.umatgong.global.response.ApiResponse;
 import com.umatgong.global.security.CustomUserDetails;
@@ -43,6 +45,12 @@ public class ClubController {
 	@GetMapping
 	public ApiResponse<List<ClubResponse>> myClubs(@AuthenticationPrincipal CustomUserDetails principal) {
 		return ApiResponse.ok(clubService.myClubs(principal.getUserId()));
+	}
+
+	@PatchMapping("/{clubId}")
+	public ApiResponse<ClubResponse> update(@AuthenticationPrincipal CustomUserDetails principal,
+		@PathVariable Long clubId, @Valid @RequestBody UpdateClubRequest request) {
+		return ApiResponse.ok(clubService.changeColor(principal.getUserId(), clubId, request.color()));
 	}
 
 	// 본문은 비워도 된다 ({"reissue": true}일 때만 새 코드)

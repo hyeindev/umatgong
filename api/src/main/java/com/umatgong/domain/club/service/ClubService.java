@@ -20,6 +20,10 @@ import com.umatgong.domain.club.repository.ClubMemberRepository.MemberCount;
 import com.umatgong.domain.club.repository.ClubRepository;
 import com.umatgong.domain.user.entity.User;
 import com.umatgong.domain.user.repository.UserRepository;
+import com.umatgong.domain.visit.entity.Visibility;
+import com.umatgong.domain.visit.repository.VisitRepository;
+import com.umatgong.domain.visit.repository.VisitRepository.ClubVisitCount;
+import com.umatgong.domain.visit.repository.VisitRepository.MemberVisitCount;
 import com.umatgong.global.error.BusinessException;
 import com.umatgong.global.error.ErrorCode;
 
@@ -40,6 +44,7 @@ public class ClubService {
 	private final UserRepository userRepository;
 	private final InviteCodeGenerator inviteCodeGenerator;
 	private final PlanProperties planProperties;
+	private final VisitRepository visitRepository;
 
 	@Transactional
 	public ClubResponse create(Long userId, String name) {
@@ -49,7 +54,7 @@ public class ClubService {
 		ClubColor color = ClubColorPicker.pick(clubMemberRepository.findClubColorsByUserId(userId));
 		Club club = clubRepository.save(Club.create(name.strip(), color, user, inviteCodeGenerator.next()));
 		clubMemberRepository.save(ClubMember.join(club, user));
-		return ClubResponse.of(club, 1, maxMembers(club), userId);
+		return ClubResponse.of(club, 1, maxMembers(club), 0, userId);
 	}
 
 	@Transactional(readOnly = true)
@@ -60,12 +65,29 @@ public class ClubService {
 		if (clubs.isEmpty()) {
 			return List.of();
 		}
-		Map<Long, Long> counts = clubMemberRepository.countByClubIds(clubs.stream().map(Club::getId).toList())
-			.stream()
+		List<Long> clubIds = clubs.stream().map(Club::getId).toList();
+		Map<Long, Long> memberCounts = clubMemberRepository.countByClubIds(clubIds).stream()
 			.collect(Collectors.toMap(MemberCount::getClubId, MemberCount::getMemberCount));
+		Map<Long, Long> visitCounts = visitCounts(clubIds);
 		return clubs.stream()
-			.map(club -> ClubResponse.of(club, counts.getOrDefault(club.getId(), 0L), maxMembers(club), userId))
+			.map(club -> ClubResponse.of(club, memberCounts.getOrDefault(club.getId(), 0L), maxMembers(club),
+				visitCounts.getOrDefault(club.getId(), 0L), userId))
 			.toList();
+	}
+
+	/**
+	 * 클럽 색을 바꾼다. 클럽장만 할 수 있다. 클럽장이 탈퇴해 클럽장이 없는 클럽은 아무도 바꿀 수 없다.
+	 * 멤버가 아니면 다른 클럽처럼 CLUB_NOT_FOUND다 (클럽이 있는지도 알려주지 않는다).
+	 */
+	@Transactional
+	public ClubResponse changeColor(Long userId, Long clubId, ClubColor color) {
+		Club club = requireMembership(clubId, userId, true);
+		if (!club.isOwnedBy(userId)) {
+			throw new BusinessException(ErrorCode.FORBIDDEN, "클럽 색은 클럽장만 바꿀 수 있습니다.");
+		}
+		club.changeColor(color);
+		return ClubResponse.of(club, clubMemberRepository.countByClubId(clubId), maxMembers(club),
+			visitCounts(List.of(clubId)).getOrDefault(clubId, 0L), userId);
 	}
 
 	/**
@@ -108,14 +130,18 @@ public class ClubService {
 		ensureCanJoinAnotherClub(userId);
 
 		clubMemberRepository.save(ClubMember.join(club, user));
-		return ClubResponse.of(club, memberCount + 1, maxMembers, userId);
+		return ClubResponse.of(club, memberCount + 1, maxMembers,
+			visitCounts(List.of(club.getId())).getOrDefault(club.getId(), 0L), userId);
 	}
 
 	@Transactional(readOnly = true)
 	public List<ClubMemberResponse> members(Long userId, Long clubId) {
 		Club club = requireMembership(clubId, userId, false);
+		Map<Long, Long> visitCounts = visitRepository.countVisibleByMember(clubId, userId, Visibility.CLUB).stream()
+			.collect(Collectors.toMap(MemberVisitCount::getUserId, MemberVisitCount::getVisitCount));
 		return clubMemberRepository.findWithUserByClubId(clubId).stream()
-			.map(member -> ClubMemberResponse.of(member, club))
+			.map(member -> ClubMemberResponse.of(member, club,
+				visitCounts.getOrDefault(member.getUser().getId(), 0L)))
 			.toList();
 	}
 
@@ -152,6 +178,12 @@ public class ClubService {
 		// 토큰은 유효한데 사용자가 없으면 탈퇴 등으로 지워진 계정이다
 		return userRepository.findByIdForUpdate(userId)
 			.orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED));
+	}
+
+	// 공개 기록만 센다. 호출하는 쪽은 요청자가 멤버인 클럽 ID만 넘긴다
+	private Map<Long, Long> visitCounts(List<Long> clubIds) {
+		return visitRepository.countByClubIds(clubIds, Visibility.CLUB).stream()
+			.collect(Collectors.toMap(ClubVisitCount::getClubId, ClubVisitCount::getVisitCount));
 	}
 
 	private int maxMembers(Club club) {
