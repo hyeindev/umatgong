@@ -60,6 +60,8 @@ export const shape = {
 export const size = {
   /** 주요 버튼 높이 (디자인 시스템 v2 버튼 52~58) */
   button: 56,
+  /** 지도 위 떠 있는 원형·사각 버튼 (현재 위치, 프로필) */
+  floatingButton: 48,
   avatar: {
     /** 카드 안에 겹쳐 놓는 작은 아바타 */
     xs: 18,
