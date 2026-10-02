@@ -47,7 +47,13 @@ public enum ErrorCode {
 	// 없는 장소와 다른 클럽의 커스텀 장소를 구분하지 않는다.
 	PLACE_NOT_FOUND(HttpStatus.NOT_FOUND, "장소를 찾을 수 없습니다."),
 	// 없는 기록과 내게 보이지 않는 기록(다른 클럽, 남의 비공개)을 구분하지 않는다.
-	VISIT_NOT_FOUND(HttpStatus.NOT_FOUND, "기록을 찾을 수 없습니다.");
+	VISIT_NOT_FOUND(HttpStatus.NOT_FOUND, "기록을 찾을 수 없습니다."),
+
+	// 사진
+	// 그림이 아니거나, 너무 크거나(원본), 크기 제한을 넘었다. 프론트가 썸네일로 줄여 다시 보낸다.
+	PHOTO_INVALID(HttpStatus.BAD_REQUEST, "올릴 수 없는 사진입니다."),
+	// 사진 저장소가 설정되지 않았거나 응답하지 않는다. 사진 없이 기록하도록 안내한다.
+	PHOTO_STORAGE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "지금은 사진을 올릴 수 없습니다.");
 
 	private final HttpStatus status;
 	private final String message;

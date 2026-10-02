@@ -33,6 +33,7 @@ class ApplicationConfigTest {
 		assertThat(raw("umatgong.kakao.rest-api-key")).isEqualTo("${KAKAO_REST_API_KEY:}");
 		assertThat(raw("umatgong.kakao.client-secret")).isEqualTo("${KAKAO_CLIENT_SECRET:}");
 		assertThat(raw("umatgong.dev.seed.token")).isEqualTo("${APP_DEV_SEED_TOKEN:}");
+		assertThat(raw("umatgong.photo.service-key")).isEqualTo("${SUPABASE_SERVICE_KEY:}");
 	}
 
 	@Test

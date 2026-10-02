@@ -71,40 +71,43 @@ public class VisitQueryRepository {
 		limit :limit
 		""".formatted(FIRST_THUMB, IN_BOUNDS, VISIBLE);
 
+	private static final String ALL_THUMBS =
+		"(select coalesce(array_agg(ph.thumb_url order by ph.id), '{}') from visit_photos ph where ph.visit_id = v.id)";
+
 	private static final String DETAIL_SELECT = """
 		select v.id, v.rating, v.memo, v.visibility, v.visited_at, v.created_at, v.user_id,
 		       u.name as user_name, u.avatar_url,
 		       p.id as place_id, p.name as place_name, p.address, p.category,
 		       ST_Y(p.coordinate::geometry) as lat, ST_X(p.coordinate::geometry) as lng,
 		       c.id as club_id, c.name as club_name, c.color as club_color,
-		       %s as thumb, %s as distance
+		       %s as thumbs, %s as distance
 		from visits v
 		join places p on p.id = v.place_id
 		join users u on u.id = v.user_id
 		left join clubs c on c.id = v.club_id
 		""";
 
-	static final String NEARBY_SQL = DETAIL_SELECT.formatted(FIRST_THUMB,
+	static final String NEARBY_SQL = DETAIL_SELECT.formatted(ALL_THUMBS,
 		"ST_Distance(p.coordinate, ST_SetSRID(ST_MakePoint(:lng, :lat), 4326)::geography)") + """
 		where %s and %s and (:filterRatings = false or v.rating = any(:ratings))
 		order by distance, v.visited_at desc, v.id desc
 		limit :limit
 		""".formatted(WITHIN_RADIUS, VISIBLE);
 
-	private static final String BY_PLACE_SQL = DETAIL_SELECT.formatted(FIRST_THUMB, "null") + """
+	private static final String BY_PLACE_SQL = DETAIL_SELECT.formatted(ALL_THUMBS, "null") + """
 		where v.place_id = :placeId and %s
 		order by v.visited_at desc, v.id desc
 		limit :limit
 		""".formatted(VISIBLE);
 
-	private static final String MINE_SQL = DETAIL_SELECT.formatted(FIRST_THUMB, "null") + """
+	private static final String MINE_SQL = DETAIL_SELECT.formatted(ALL_THUMBS, "null") + """
 		where v.user_id = :viewerId and %s
 		  and (:afterCursor = false or (v.visited_at, v.id) < (:cursorVisitedAt, :cursorId))
 		order by v.visited_at desc, v.id desc
 		limit :limit
 		""".formatted(VISIBLE);
 
-	private static final String BY_ID_SQL = DETAIL_SELECT.formatted(FIRST_THUMB, "null") + """
+	private static final String BY_ID_SQL = DETAIL_SELECT.formatted(ALL_THUMBS, "null") + """
 		where v.id = :id and %s
 		""".formatted(VISIBLE);
 
@@ -185,6 +188,7 @@ public class VisitQueryRepository {
 			double distance = rs.getDouble("distance");
 			boolean hasDistance = !rs.wasNull();
 			long authorId = rs.getLong("user_id");
+			List<String> thumbs = List.of((String[]) rs.getArray("thumbs").getArray());
 			return new VisitResponse(
 				rs.getLong("id"),
 				new VisitResponse.PlaceSummary(rs.getLong("place_id"), rs.getString("place_name"),
@@ -197,7 +201,8 @@ public class VisitQueryRepository {
 				Visibility.valueOf(rs.getString("visibility")),
 				instant(rs, "visited_at"),
 				instant(rs, "created_at"),
-				rs.getString("thumb"),
+				thumbs.isEmpty() ? null : thumbs.get(0),
+				thumbs,
 				viewerId.equals(authorId),
 				hasDistance ? (int) Math.round(distance) : null);
 		};
