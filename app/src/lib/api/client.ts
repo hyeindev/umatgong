@@ -56,4 +56,6 @@ export const apiClient = {
     request<T>('PATCH', path, { ...options, body }),
   delete: <T>(path: string, options?: Omit<RequestOptions, 'body'>) =>
     request<T>('DELETE', path, options),
+  /** multipart/form-data. 토큰 갱신·재시도 규칙은 다른 요청과 같다 */
+  upload: <T>(path: string, form: FormData) => request<T>('POST', path, { body: form }),
 };

@@ -72,6 +72,10 @@ export const size = {
     md: 42,
     lg: 72,
   },
+  /** 기록하기의 사진 칸 */
+  photoSlot: 72,
+  /** 평가 버튼 높이. 한 손으로 누르기 쉽게 주요 버튼보다 크다 */
+  ratingButton: 72,
   /** 클럽 정원 막대의 두께 */
   capacityBar: 8,
   /** 클럽 목록·제목 옆의 클럽 색 점 */

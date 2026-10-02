@@ -53,6 +53,7 @@ export type MapMarker =
     };
 
 export type MapHandle = {
+  /** 지도가 아직 준비되지 않았으면 준비된 뒤 옮긴다 */
   moveTo: (center: Coordinate, zoom: MapZoom) => void;
   /** 한 단계 이상 확대하며 그 좌표로 옮긴다 (클러스터를 눌렀을 때) */
   zoomInAt: (center: Coordinate) => void;
@@ -65,6 +66,8 @@ export type MapProps = {
   myLocation?: Coordinate | null;
   markers?: readonly MapMarker[];
   onMarkerPress?: (marker: MapMarker) => void;
+  /** 지도 빈 곳을 눌렀을 때 그 좌표 (표식을 누르면 부르지 않는다) */
+  onPress?: (coordinate: Coordinate) => void;
   /**
    * 지도 이동·확대가 **멈췄을 때만** 부른다. 움직이는 동안 매 프레임 부르지 않는다.
    * 처음 지도를 그린 뒤에도 한 번 부른다

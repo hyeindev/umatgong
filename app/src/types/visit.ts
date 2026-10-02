@@ -16,3 +16,39 @@ export type VisitPin = {
   rating: Rating;
   thumbnailUrl: string | null;
 };
+
+/** 기록 한 건 (GET /api/visits/nearby 등). 기록하기 화면은 후보 정렬에 placeId와 mine만 쓴다 */
+export type Visit = {
+  id: number;
+  place: {
+    id: number;
+    name: string;
+    address: string | null;
+    category: string | null;
+    coordinate: Coordinate;
+  };
+  club: { id: number; name: string; color: ClubColor } | null;
+  author: { id: number; name: string; avatarUrl: string | null };
+  rating: Rating;
+  memo: string | null;
+  visibility: 'CLUB' | 'PRIVATE';
+  visitedAt: string;
+  createdAt: string;
+  thumbnailUrl: string | null;
+  thumbnailUrls: string[];
+  mine: boolean;
+  distanceMeters: number | null;
+};
+
+/** POST /api/visits */
+export type CreateVisitRequest = {
+  placeId: number;
+  clubId?: number;
+  rating: Rating;
+  memo?: string;
+  visitedAt: string;
+  thumbnailUrls?: string[];
+};
+
+/** POST /api/photos/thumbnails */
+export type ThumbnailUpload = { url: string; width: number; height: number };

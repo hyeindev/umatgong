@@ -39,7 +39,9 @@ const isApiResponse = (value: unknown): value is ApiResponse<unknown> =>
 export const send = async <T>(method: HttpMethod, path: string, options: SendOptions = {}) => {
   const url = buildUrl(path, options.query);
   const headers: Record<string, string> = { Accept: 'application/json' };
-  if (options.body !== undefined) {
+  // FormData(파일 업로드)는 브라우저·RN이 경계(boundary)가 든 Content-Type을 직접 붙인다
+  const isForm = typeof FormData !== 'undefined' && options.body instanceof FormData;
+  if (options.body !== undefined && !isForm) {
     headers['Content-Type'] = 'application/json';
   }
   if (options.accessToken) {
@@ -51,7 +53,12 @@ export const send = async <T>(method: HttpMethod, path: string, options: SendOpt
     response = await fetch(url, {
       method,
       headers,
-      body: options.body === undefined ? undefined : JSON.stringify(options.body),
+      body:
+        options.body === undefined
+          ? undefined
+          : isForm
+            ? (options.body as FormData)
+            : JSON.stringify(options.body),
     });
   } catch {
     throw new ApiError(

@@ -12,4 +12,14 @@ export type Place = {
   coordinate: Coordinate;
   /** 요청 좌표로부터의 직선거리(미터). 요청에 좌표가 없으면 null */
   distanceMeters: number | null;
+  /** 「여기 없어요」로 직접 등록한 클럽 전용 장소면 그 클럽 ID. 그 클럽으로만 기록할 수 있다 */
+  clubId: number | null;
+};
+
+/** POST /api/places/custom */
+export type CreateCustomPlaceRequest = {
+  clubId: number;
+  name: string;
+  address?: string | null;
+  coordinate: Coordinate;
 };
