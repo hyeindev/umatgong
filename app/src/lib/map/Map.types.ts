@@ -63,7 +63,7 @@ export type MapProps = {
   /** 처음 보여줄 영역. 이 영역이 화면에 꽉 차게 맞춘다 */
   initialBounds: MapBounds;
   /**
-   * 지도를 이 영역 밖으로 옮기지 못하게 하고, 이 영역 전체가 화면에 들어오는 것보다 멀리 축소하지 못하게 한다.
+   * 지도 가운데를 이 영역 밖으로 옮기지 못하게 하고, 첫 화면(initialBounds)보다 멀리 축소하지 못하게 한다.
    * 남한만 보이게 할 때 쓴다 (주변 나라로 끌려가지 않게)
    */
   restrictTo?: MapBounds;

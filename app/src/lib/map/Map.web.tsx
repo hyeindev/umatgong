@@ -20,6 +20,7 @@ const LEVEL: Record<MapZoom, number> = {
   neighborhood: 5,
 };
 const MIN_LEVEL = 1;
+const FIT_PADDING = 4;
 // 클러스터를 누르면 이만큼 확대한다. 한 단계씩이면 묶음이 거의 그대로라 여러 번 눌러야 한다
 const CLUSTER_ZOOM_STEP = 2;
 
@@ -77,22 +78,18 @@ export const Map: MapComponent = ({
           center: new maps.LatLng((sw.lat + ne.lat) / 2, (sw.lng + ne.lng) / 2),
           level: LEVEL.nation,
         });
+        // 여백을 작게 둔다. 기본 여백이면 영역이 조금만 넘쳐도 한 단계(두 배) 멀어진다
         map.setBounds(
           new maps.LatLngBounds(new maps.LatLng(sw.lat, sw.lng), new maps.LatLng(ne.lat, ne.lng)),
+          FIT_PADDING,
+          FIT_PADDING,
+          FIT_PADDING,
+          FIT_PADDING,
         );
         const restrict = initial.current.restrictTo;
         if (restrict) {
-          // 제한 영역을 화면에 꽉 채운 레벨이 가장 먼 레벨이다. 화면 크기마다 달라서 숫자를 박지 않는다
-          map.setBounds(
-            new maps.LatLngBounds(
-              new maps.LatLng(restrict.sw.lat, restrict.sw.lng),
-              new maps.LatLng(restrict.ne.lat, restrict.ne.lng),
-            ),
-          );
+          // 첫 화면 레벨이 가장 먼 레벨이다. 화면 크기마다 달라서 숫자를 박지 않는다
           map.setMaxLevel(map.getLevel());
-          map.setBounds(
-            new maps.LatLngBounds(new maps.LatLng(sw.lat, sw.lng), new maps.LatLng(ne.lat, ne.lng)),
-          );
         }
 
         // idle은 이동·확대 애니메이션이 끝났을 때 한 번만 온다. 드래그 중에는 오지 않는다

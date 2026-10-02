@@ -10,6 +10,7 @@ import {
   EmptyStateSheet,
   MapFilterChips,
   SOUTH_KOREA_BOUNDS,
+  SOUTH_KOREA_VIEW,
   toMapMarkers,
   toPlacePins,
   useDebouncedValue,
@@ -149,7 +150,7 @@ export default function MapHomeScreen() {
     <View style={styles.screen}>
       <Map
         ref={mapRef}
-        initialBounds={SOUTH_KOREA_BOUNDS}
+        initialBounds={SOUTH_KOREA_VIEW}
         restrictTo={SOUTH_KOREA_BOUNDS}
         myLocation={myLocation}
         markers={markers}

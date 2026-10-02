@@ -14,7 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BackButton } from '@/components/BackButton';
 import { useMyClubs } from '@/features/club';
-import { SOUTH_KOREA_BOUNDS, useDebouncedValue } from '@/features/map';
+import { SOUTH_KOREA_BOUNDS, SOUTH_KOREA_VIEW, useDebouncedValue } from '@/features/map';
 import {
   CandidateList,
   ClubChoice,
@@ -148,7 +148,7 @@ function PlaceStep({ onChoose }: { onChoose: (choice: PlaceChoice) => void }) {
       <View style={styles.mapArea}>
         <Map
           ref={mapRef}
-          initialBounds={SOUTH_KOREA_BOUNDS}
+          initialBounds={SOUTH_KOREA_VIEW}
           restrictTo={SOUTH_KOREA_BOUNDS}
           myLocation={myLocation}
           markers={markers}
