@@ -20,6 +20,8 @@ export type ServerErrorCode =
   | 'CLUB_LIMIT_REACHED'
   | 'PLACE_NOT_FOUND'
   | 'VISIT_NOT_FOUND'
+  | 'PHOTO_INVALID'
+  | 'PHOTO_STORAGE_UNAVAILABLE'
   | 'INTERNAL_ERROR';
 
 /**

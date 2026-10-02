@@ -5,6 +5,8 @@ const JS_KEY = process.env.EXPO_PUBLIC_KAKAO_JS_KEY;
 /** 쓰는 기능만 적은 최소 타입 */
 export type KakaoLatLng = { getLat: () => number; getLng: () => number };
 
+export type KakaoMouseEvent = { latLng: KakaoLatLng };
+
 export type KakaoLatLngBounds = {
   getSouthWest: () => KakaoLatLng;
   getNorthEast: () => KakaoLatLng;
@@ -40,8 +42,14 @@ export type KakaoMaps = {
     clickable?: boolean;
   }) => KakaoCustomOverlay;
   event: {
-    addListener: (target: KakaoMap, type: 'idle', handler: () => void) => void;
-    removeListener: (target: KakaoMap, type: 'idle', handler: () => void) => void;
+    addListener: {
+      (target: KakaoMap, type: 'idle', handler: () => void): void;
+      (target: KakaoMap, type: 'click', handler: (event: KakaoMouseEvent) => void): void;
+    };
+    removeListener: {
+      (target: KakaoMap, type: 'idle', handler: () => void): void;
+      (target: KakaoMap, type: 'click', handler: (event: KakaoMouseEvent) => void): void;
+    };
   };
 };
 

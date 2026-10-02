@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
@@ -28,7 +28,7 @@ const FETCH_DEBOUNCE_MS = 300;
 // 지도 홈. 앱을 켜면 바로 여기다 (화면기획서 1장 “지도가 곧 홈이다”).
 // 첫 진입은 남한 전체에서 시작하고, 확대하면 동네로 들어간다 (화면기획서 4.1, ref-main.html M1).
 //
-// TODO: 핀을 누르면 미니 카드(4.2), 「내 근처 맛집」(4.3).
+// TODO: 핀을 누르면 미니 카드(4.2), 「내 근처 맛집」(4.3). 「내 근처 맛집」이 생기면 「기록하기」는 그 위의 보조 버튼이 된다.
 // TODO: 전국·광역 단계의 지역명 클러스터는 서버 지역 집계 API가 생기면 바꾼다. 지금은 화면 격자로 묶는다.
 export default function MapHomeScreen() {
   const router = useRouter();
@@ -38,6 +38,26 @@ export default function MapHomeScreen() {
   const [myLocation, setMyLocation] = useState<Coordinate | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [locating, setLocating] = useState(false);
+
+  // 기록하기에서 저장하고 돌아오면 새 핀이 있는 동네로 옮긴다. recorded는 같은 곳을 다시 기록해도 바뀌는 값이다
+  const { focusLat, focusLng, recorded } = useLocalSearchParams<{
+    focusLat?: string;
+    focusLng?: string;
+    recorded?: string;
+  }>();
+  // 안내는 상태로 따로 두지 않고 recorded 값에서 정한다. 몇 초 뒤 그 값을 “본 것”으로 표시해 끈다
+  const [seenRecorded, setSeenRecorded] = useState<string | null>(null);
+  useEffect(() => {
+    const lat = Number(focusLat);
+    const lng = Number(focusLng);
+    if (!recorded || !Number.isFinite(lat) || !Number.isFinite(lng)) {
+      return;
+    }
+    mapRef.current?.moveTo({ lat, lng }, 'neighborhood');
+    const timer = setTimeout(() => setSeenRecorded(recorded), 3000);
+    return () => clearTimeout(timer);
+  }, [focusLat, focusLng, recorded]);
+  const recordedNotice = recorded && recorded !== seenRecorded ? '새 핀을 꽂았어요.' : null;
 
   // 로그인 전에 초대 링크를 열었다면 로그인을 마치고 여기로 온다. 맡겨 둔 코드로 합류 화면을 다시 연다
   useEffect(() => {
@@ -121,7 +141,9 @@ export default function MapHomeScreen() {
   };
 
   const notice =
-    message ?? (pins.isError ? '기록을 불러오지 못했어요. 지도를 움직이면 다시 시도해요.' : null);
+    message ??
+    recordedNotice ??
+    (pins.isError ? '기록을 불러오지 못했어요. 지도를 움직이면 다시 시도해요.' : null);
 
   return (
     <View style={styles.screen}>
@@ -202,7 +224,17 @@ export default function MapHomeScreen() {
             />
           </Svg>
         </Pressable>
-        {isEmpty ? <EmptyStateSheet /> : null}
+        {isEmpty ? (
+          <EmptyStateSheet onRecord={() => router.push('/record')} />
+        ) : (
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => router.push('/record')}
+            style={({ pressed }) => [styles.record, pressed && styles.pressed]}
+          >
+            <Text style={styles.recordLabel}>기록하기</Text>
+          </Pressable>
+        )}
       </View>
     </View>
   );
@@ -267,6 +299,19 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface.sheet,
     borderWidth: 1,
     borderColor: colors.border.subtle,
+  },
+  // 화면의 주요 행동 하나라 라임 (한 화면에 라임 면 2개까지)
+  record: {
+    marginHorizontal: layout.screenGutter,
+    height: size.button,
+    borderRadius: shape.button,
+    backgroundColor: colors.accent.default,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  recordLabel: {
+    ...textStyles.button,
+    color: colors.accent.on,
   },
   pressed: {
     opacity: 0.85,

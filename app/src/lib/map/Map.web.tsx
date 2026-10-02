@@ -7,6 +7,8 @@ import {
   type KakaoMap,
   type KakaoMaps,
 } from './kakaoMapSdk.web';
+import type { Coordinate } from '@/types/geo';
+
 import type { MapComponent, MapMarker, MapRegion, MapZoom } from './Map.types';
 import { anchorOf, DARK_TILES, markerElement, myLocationElement, zIndexOf } from './markers.web';
 
@@ -35,6 +37,7 @@ export const Map: MapComponent = ({
   markers,
   onMarkerPress,
   onRegionChange,
+  onPress,
   onError,
   style,
   ref,
@@ -49,10 +52,12 @@ export const Map: MapComponent = ({
   // 지도 생성은 처음 한 번만. 이후 바뀌는 값은 아래 effect들이 반영한다
   const initial = useRef({ initialBounds, onError });
   // 이벤트 핸들러는 지도를 만들 때 한 번만 등록하므로 최신 콜백은 ref로 읽는다
-  const callbacks = useRef({ onMarkerPress, onRegionChange });
+  const callbacks = useRef({ onMarkerPress, onRegionChange, onPress });
   useEffect(() => {
-    callbacks.current = { onMarkerPress, onRegionChange };
-  }, [onMarkerPress, onRegionChange]);
+    callbacks.current = { onMarkerPress, onRegionChange, onPress };
+  }, [onMarkerPress, onRegionChange, onPress]);
+  // SDK를 받기 전에 들어온 이동 요청. 지도가 생기면 한 번 적용한다
+  const pendingMove = useRef<{ center: Coordinate; zoom: MapZoom } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -90,11 +95,25 @@ export const Map: MapComponent = ({
           callbacks.current.onRegionChange?.(region);
         };
         maps.event.addListener(map, 'idle', emitRegion);
-        cleanup = () => maps.event.removeListener(map, 'idle', emitRegion);
+        // 표식(CustomOverlay)을 누르면 표식 쪽에서 전파를 막으므로 여기엔 지도 빈 곳만 온다
+        const emitPress = (event: { latLng: { getLat: () => number; getLng: () => number } }) =>
+          callbacks.current.onPress?.({ lat: event.latLng.getLat(), lng: event.latLng.getLng() });
+        maps.event.addListener(map, 'click', emitPress);
+        cleanup = () => {
+          maps.event.removeListener(map, 'idle', emitRegion);
+          maps.event.removeListener(map, 'click', emitPress);
+        };
 
         mapsRef.current = maps;
         mapRef.current = map;
         setReady(true);
+        if (pendingMove.current) {
+          map.setLevel(LEVEL[pendingMove.current.zoom]);
+          map.setCenter(
+            new maps.LatLng(pendingMove.current.center.lat, pendingMove.current.center.lng),
+          );
+          pendingMove.current = null;
+        }
         // setBounds의 idle이 리스너 등록보다 먼저 지나갔을 수 있으므로 첫 영역은 직접 알린다
         emitRegion();
       })
@@ -186,6 +205,7 @@ export const Map: MapComponent = ({
         const maps = mapsRef.current;
         const map = mapRef.current;
         if (!maps || !map) {
+          pendingMove.current = { center, zoom };
           return;
         }
         map.setLevel(LEVEL[zoom]);
