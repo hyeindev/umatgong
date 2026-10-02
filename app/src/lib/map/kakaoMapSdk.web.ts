@@ -13,7 +13,14 @@ export type KakaoLatLngBounds = {
 };
 
 export type KakaoMap = {
-  setBounds: (bounds: unknown) => void;
+  /** 여백은 위·오른쪽·아래·왼쪽 픽셀 */
+  setBounds: (
+    bounds: unknown,
+    top?: number,
+    right?: number,
+    bottom?: number,
+    left?: number,
+  ) => void;
   getBounds: () => KakaoLatLngBounds;
   getLevel: () => number;
   getCenter: () => KakaoLatLng;
