@@ -62,6 +62,11 @@ export type MapHandle = {
 export type MapProps = {
   /** 처음 보여줄 영역. 이 영역이 화면에 꽉 차게 맞춘다 */
   initialBounds: MapBounds;
+  /**
+   * 지도를 이 영역 밖으로 옮기지 못하게 하고, 이 영역 전체가 화면에 들어오는 것보다 멀리 축소하지 못하게 한다.
+   * 남한만 보이게 할 때 쓴다 (주변 나라로 끌려가지 않게)
+   */
+  restrictTo?: MapBounds;
   /** 내 위치. 크림색 점 + 옅은 후광으로 그린다. 없으면 그리지 않는다 */
   myLocation?: Coordinate | null;
   markers?: readonly MapMarker[];

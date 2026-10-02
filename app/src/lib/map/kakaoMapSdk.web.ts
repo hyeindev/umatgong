@@ -16,6 +16,9 @@ export type KakaoMap = {
   setBounds: (bounds: unknown) => void;
   getBounds: () => KakaoLatLngBounds;
   getLevel: () => number;
+  getCenter: () => KakaoLatLng;
+  /** 이보다 멀리 축소하지 못하게 한다 (레벨이 클수록 멀다) */
+  setMaxLevel: (level: number) => void;
   setCenter: (latLng: KakaoLatLng) => void;
   setLevel: (level: number, options?: { animate?: boolean }) => void;
   panTo: (latLng: KakaoLatLng) => void;

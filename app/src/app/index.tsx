@@ -150,6 +150,7 @@ export default function MapHomeScreen() {
       <Map
         ref={mapRef}
         initialBounds={SOUTH_KOREA_BOUNDS}
+        restrictTo={SOUTH_KOREA_BOUNDS}
         myLocation={myLocation}
         markers={markers}
         onMarkerPress={onMarkerPress}

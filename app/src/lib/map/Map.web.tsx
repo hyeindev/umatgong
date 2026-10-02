@@ -10,6 +10,7 @@ import {
 import type { Coordinate } from '@/types/geo';
 
 import type { MapComponent, MapMarker, MapRegion, MapZoom } from './Map.types';
+import { clampCenter } from './bounds';
 import { anchorOf, DARK_TILES, markerElement, myLocationElement, zIndexOf } from './markers.web';
 
 // 카카오맵 레벨: 1이 가장 가깝고 14가 가장 멀다. docs/화면기획서.md 4.1 줌 단계와 맞춘다
@@ -33,6 +34,7 @@ type DrawnMarker = { overlay: KakaoCustomOverlay; signature: string };
 
 export const Map: MapComponent = ({
   initialBounds,
+  restrictTo,
   myLocation,
   markers,
   onMarkerPress,
@@ -50,7 +52,7 @@ export const Map: MapComponent = ({
   // SDK를 받기 전에 들어온 마커·내 위치도 지도가 준비되면 그리도록 effect가 이 값을 본다
   const [ready, setReady] = useState(false);
   // 지도 생성은 처음 한 번만. 이후 바뀌는 값은 아래 effect들이 반영한다
-  const initial = useRef({ initialBounds, onError });
+  const initial = useRef({ initialBounds, restrictTo, onError });
   // 이벤트 핸들러는 지도를 만들 때 한 번만 등록하므로 최신 콜백은 ref로 읽는다
   const callbacks = useRef({ onMarkerPress, onRegionChange, onPress });
   useEffect(() => {
@@ -78,9 +80,32 @@ export const Map: MapComponent = ({
         map.setBounds(
           new maps.LatLngBounds(new maps.LatLng(sw.lat, sw.lng), new maps.LatLng(ne.lat, ne.lng)),
         );
+        const restrict = initial.current.restrictTo;
+        if (restrict) {
+          // 제한 영역을 화면에 꽉 채운 레벨이 가장 먼 레벨이다. 화면 크기마다 달라서 숫자를 박지 않는다
+          map.setBounds(
+            new maps.LatLngBounds(
+              new maps.LatLng(restrict.sw.lat, restrict.sw.lng),
+              new maps.LatLng(restrict.ne.lat, restrict.ne.lng),
+            ),
+          );
+          map.setMaxLevel(map.getLevel());
+          map.setBounds(
+            new maps.LatLngBounds(new maps.LatLng(sw.lat, sw.lng), new maps.LatLng(ne.lat, ne.lng)),
+          );
+        }
 
         // idle은 이동·확대 애니메이션이 끝났을 때 한 번만 온다. 드래그 중에는 오지 않는다
         const emitRegion = () => {
+          // 영역 밖으로 끌고 갔으면 돌려놓는다. 돌려놓은 뒤의 idle에서 영역을 알린다
+          if (restrict) {
+            const center = map.getCenter();
+            const back = clampCenter({ lat: center.getLat(), lng: center.getLng() }, restrict);
+            if (back) {
+              map.panTo(new maps.LatLng(back.lat, back.lng));
+              return;
+            }
+          }
           const bounds = map.getBounds();
           const southWest = bounds.getSouthWest();
           const northEast = bounds.getNorthEast();

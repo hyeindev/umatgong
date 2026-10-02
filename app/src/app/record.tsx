@@ -149,6 +149,7 @@ function PlaceStep({ onChoose }: { onChoose: (choice: PlaceChoice) => void }) {
         <Map
           ref={mapRef}
           initialBounds={SOUTH_KOREA_BOUNDS}
+          restrictTo={SOUTH_KOREA_BOUNDS}
           myLocation={myLocation}
           markers={markers}
           onPress={onMapPress}
