@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import com.umatgong.global.response.ApiResponse;
@@ -40,10 +42,17 @@ public class GlobalExceptionHandler {
 		HandlerMethodValidationException.class,
 		MissingServletRequestParameterException.class,
 		MethodArgumentTypeMismatchException.class,
-		HttpMessageNotReadableException.class
+		HttpMessageNotReadableException.class,
+		MissingServletRequestPartException.class
 	})
 	public ResponseEntity<ApiResponse<Void>> handleBadRequest(Exception e) {
 		return respond(ErrorCode.INVALID_INPUT);
+	}
+
+	// 썸네일 크기 제한(umatgong.photo.max-bytes)보다 훨씬 큰 파일은 본문을 다 받기 전에 여기서 끊긴다
+	@ExceptionHandler(MaxUploadSizeExceededException.class)
+	public ResponseEntity<ApiResponse<Void>> handleTooLarge(MaxUploadSizeExceededException e) {
+		return respond(ErrorCode.PHOTO_INVALID, ApiResponse.fail(ErrorCode.PHOTO_INVALID, "사진이 너무 큽니다. 썸네일만 올릴 수 있습니다."));
 	}
 
 	@ExceptionHandler(HttpRequestMethodNotSupportedException.class)

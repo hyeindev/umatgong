@@ -93,6 +93,8 @@ Authorization: Bearer {accessToken}
 | `CLUB_LIMIT_REACHED` | 409 | 한 사람이 속할 수 있는 클럽 수를 넘음 |
 | `PLACE_NOT_FOUND` | 404 | 없는 장소, 또는 다른 클럽의 커스텀 장소 (둘을 구분하지 않는다) |
 | `VISIT_NOT_FOUND` | 404 | 없는 기록, 또는 내게 보이지 않는 기록 (다른 클럽, 남의 비공개) |
+| `PHOTO_INVALID` | 400 | 올릴 수 없는 사진 (그림 아님, 크기·해상도 초과) |
+| `PHOTO_STORAGE_UNAVAILABLE` | 503 | 사진 저장소 미설정·장애 |
 | `KAKAO_UNAVAILABLE` | 502 | 카카오 서버 장애·타임아웃·호출 한도 초과. 잠시 후 재시도 |
 | `INTERNAL_ERROR` | 500 | 서버 오류 |
 
@@ -276,7 +278,7 @@ Authorization: Bearer {accessToken}
 
 ## 3. 장소 (`/api/places`)
 
-두 API 모두 **액세스 토큰이 필요하다.** 로그인하지 않은 요청은 카카오를 호출하지 않고 401을 돌려준다.
+모든 API에 **액세스 토큰이 필요하다.** 로그인하지 않은 요청은 카카오를 호출하지 않고 401을 돌려준다.
 
 카카오 로컬 API 결과를 서버가 대신 조회해 돌려준다. 프론트는 카카오 REST API를 직접 호출하지 않는다.
 
@@ -286,6 +288,8 @@ Authorization: Bearer {accessToken}
 - **검색 결과는 최대 1시간 캐시된다.** 같은 검색이면 카카오를 다시 부르지 않으므로
   그동안 카카오에서 바뀐 가게 정보는 늦게 반영될 수 있다
 - 카카오 한 페이지(검색 종류당 최대 15곳)만 조회한다. 페이지 넘김은 아직 없다
+- **클럽 전용 장소**(「여기 없어요」로 직접 등록, 아래 `POST /api/places/custom`)는 그 클럽의 **현재 멤버에게만**
+  주변·검색 결과에 섞여 나온다. 캐시하지 않고 요청마다 요청자의 지금 클럽으로 거른다
 
 ### 장소 응답 (`Place`)
 
@@ -296,7 +300,8 @@ Authorization: Bearer {accessToken}
   "address": "서울 마포구 포은로 1",
   "category": "곱창,막창",
   "coordinate": { "lat": 37.5556, "lng": 126.9106 },
-  "distanceMeters": 120
+  "distanceMeters": 120,
+  "clubId": null
 }
 ```
 
@@ -308,6 +313,7 @@ Authorization: Bearer {accessToken}
 | `category` | string \| null | 업종의 가장 구체적인 단계. 예: `"곱창,막창"`, `"커피전문점"` |
 | `coordinate` | `{ lat, lng }` | 가게 좌표 |
 | `distanceMeters` | number \| null | 요청 좌표로부터의 직선거리(미터). 요청에 좌표가 없으면 `null` |
+| `clubId` | number \| null | 클럽 전용 장소면 그 클럽 ID, 카카오 장소면 `null`. 클럽 전용 장소에는 **그 클럽으로만** 기록할 수 있다 |
 
 > `distanceMeters`는 직선거리다. "걸어서 7분" 같은 소요시간은 별도의 경로 API로 제공할 예정이다.
 
@@ -337,7 +343,7 @@ GET /api/places/nearby?lat=37.5556&lng=126.9106&radius=500
 결과가 없으면 `data`는 빈 배열이다.
 
 - 좌표는 소수점 넷째 자리(약 11m)까지 같으면 같은 검색으로 보고 캐시를 쓴다
-- 사용자가 직접 입력한 클럽 전용 장소(`source=USER`)는 아직 포함하지 않는다
+- 내 클럽 전용 장소도 반경 안이면 함께 섞어 가까운 순으로 준다
 
 에러
 
@@ -367,6 +373,7 @@ GET /api/places/search?query=김반장&lat=37.5556&lng=126.9106
 
 - 좌표는 결과를 거르거나 정렬하지 않는다. 거리 표시에만 쓴다
 - 같은 검색어(앞뒤 공백·대소문자 무시)면 좌표가 달라도 같은 캐시를 쓴다
+- 이름에 검색어가 들어간 내 클럽 전용 장소(최대 15곳)를 카카오 결과 **앞에** 준다
 
 에러
 
@@ -375,6 +382,36 @@ GET /api/places/search?query=김반장&lat=37.5556&lng=126.9106
 | 400 | `INVALID_INPUT` | `query` 누락·공백, `lat`/`lng` 중 하나만 보냄, 범위 밖 |
 | 401 | `UNAUTHORIZED` 등 | 액세스 토큰 없음·만료 |
 | 502 | `KAKAO_UNAVAILABLE` | 카카오 장애·타임아웃·호출 한도 초과 |
+
+### POST /api/places/custom — 가게 직접 등록 (「여기 없어요」)
+
+카카오에서 찾을 수 없는 가게를 **클럽 전용**으로 등록한다 (화면기획서 4.6). 그 클럽 멤버에게만 보인다.
+다음에 같은 근처에서 찾으면 주변 후보·검색에 뜨고, 클럽 친구에게도 뜬다.
+
+요청
+
+```json
+{ "clubId": 3, "name": "광교 할머니 국수", "address": null, "coordinate": { "lat": 37.2887, "lng": 127.0518 } }
+```
+
+| 필드 | 타입 | 필수 | 설명 |
+|---|---|---|---|
+| `clubId` | number | O | 내가 멤버인 클럽 |
+| `name` | string | O | 1~100자. 앞뒤 공백은 지운다 |
+| `address` | string | | 최대 255자 |
+| `coordinate` | `{ lat, lng }` | O | 가게 위치 (지도에서 찍은 곳, 또는 지금 내 위치) |
+
+응답 `201`: `{ "success": true, "data": Place }` (`clubId`가 채워져 있다)
+
+- 같은 클럽에 **이름이 같고(대소문자·앞뒤 공백 무시) 50m 안인** 장소가 이미 있으면 새로 만들지 않고 그 장소를 준다
+- 다른 클럽에는 같은 가게가 따로 만들어진다 (클럽 경계)
+
+에러
+
+| HTTP | code | 상황 |
+|---|---|---|
+| 400 | `INVALID_INPUT` | 이름이 비었거나 100자 초과, 좌표 누락·범위 밖 |
+| 404 | `CLUB_NOT_FOUND` | 내가 멤버가 아닌 클럽 (없는 클럽과 구분하지 않음) |
 
 ---
 
@@ -602,6 +639,7 @@ GET /api/places/search?query=김반장&lat=37.5556&lng=126.9106
   "visitedAt": "2026-09-30T12:00:00Z",
   "createdAt": "2026-09-30T12:05:00Z",
   "thumbnailUrl": "https://cdn.example/t1.jpg",
+  "thumbnailUrls": ["https://cdn.example/t1.jpg"],
   "mine": false,
   "distanceMeters": null
 }
@@ -612,7 +650,8 @@ GET /api/places/search?query=김반장&lat=37.5556&lng=126.9106
 | `club` | object \| null | 클럽 없이 남긴 기록이면 `null` |
 | `memo` | string \| null | 한 줄 메모 (최대 200자) |
 | `visibility` | `"CLUB"` \| `"PRIVATE"` | |
-| `thumbnailUrl` | string \| null | 썸네일. 원본 사진은 서버에 없다 |
+| `thumbnailUrl` | string \| null | 대표(첫) 썸네일. 원본 사진은 서버에 없다 |
+| `thumbnailUrls` | string[] | 썸네일 전체 (올린 순서, 최대 3장). 없으면 빈 배열 |
 | `mine` | boolean | 내가 쓴 기록인지 (수정·삭제 버튼 노출 기준) |
 | `distanceMeters` | number \| null | 주변 조회(`/nearby`)에서만 기준 좌표로부터의 직선거리. 그 밖에는 `null` |
 
@@ -628,7 +667,7 @@ GET /api/places/search?query=김반장&lat=37.5556&lng=126.9106
   "memo": "막창 최고",
   "visitedAt": "2026-09-30T12:00:00Z",
   "visibility": "CLUB",
-  "thumbnailUrl": "https://cdn.example/t1.jpg"
+  "thumbnailUrls": ["https://<storage>/storage/v1/object/public/thumbnails/thumbs/7/2f1c....jpg"]
 }
 ```
 
@@ -640,7 +679,7 @@ GET /api/places/search?query=김반장&lat=37.5556&lng=126.9106
 | `memo` | string | | 최대 200자. 앞뒤 공백을 지우고, 비면 `null` |
 | `visitedAt` | string | O | 방문 시각 (ISO 8601). 하루 넘게 미래면 거부 |
 | `visibility` | string | | 없으면 `clubId`가 있을 때 `CLUB`, 없을 때 `PRIVATE`. `CLUB`이면 `clubId` 필수 |
-| `thumbnailUrl` | string | | `https://` 주소, 최대 500자 |
+| `thumbnailUrls` | string[] | | 0~3개. **`POST /api/photos/thumbnails`로 내가 올린 주소만** 된다 (남이 올린 사진·바깥 주소는 400). 올린 순서대로 붙는다 |
 
 응답 `201`: `{ "success": true, "data": Visit }`
 
@@ -648,7 +687,7 @@ GET /api/places/search?query=김반장&lat=37.5556&lng=126.9106
 
 | HTTP | code | 상황 |
 |---|---|---|
-| 400 | `INVALID_INPUT` | 필수 값 누락, 평가 값 오류, 메모 200자 초과, https가 아닌 썸네일, 미래 시각, `CLUB`인데 `clubId` 없음 |
+| 400 | `INVALID_INPUT` | 필수 값 누락, 평가 값 오류, 메모 200자 초과, 내가 올리지 않은 썸네일·4장 이상, 미래 시각, `CLUB`인데 `clubId` 없음 |
 | 404 | `CLUB_NOT_FOUND` | 내가 멤버가 아닌 클럽 (없는 클럽과 구분하지 않음) |
 | 404 | `PLACE_NOT_FOUND` | 없는 장소, 또는 다른 클럽의 커스텀 장소 |
 
@@ -748,7 +787,7 @@ GET /api/visits/map?swLat=37.40&swLng=126.75&neLat=37.70&neLng=127.20
 
 ### DELETE /api/visits/{visitId} — 내 기록 지우기
 
-응답 `200`: `{ "success": true }`. 썸네일도 함께 지운다.
+응답 `200`: `{ "success": true }`. 썸네일도 함께 지운다 (사진 저장소의 파일까지. 저장소 삭제가 실패해도 기록 삭제는 되돌리지 않는다).
 
 - 탈퇴한 클럽에 남긴 **내 기록도 지울 수 있다** (기획서 C-04 “내 기록 삭제”)
 
@@ -756,7 +795,41 @@ GET /api/visits/map?swLat=37.40&swLng=126.75&neLat=37.70&neLng=127.20
 
 ---
 
-## 6. 개발 전용 (`/api/dev`)
+## 6. 사진 (`/api/photos`)
+
+### POST /api/photos/thumbnails — 썸네일 올리기
+
+기록에 붙일 사진을 올린다. **원본은 받지 않는다** (기획서 “사진 원본을 서버에 저장하지 않는다”).
+프론트가 긴 변 800px 이하의 썸네일로 줄여서 보낸다. 받은 주소를 `POST /api/visits`의 `thumbnailUrls`에 넣는다.
+
+요청: `multipart/form-data`, 파트 이름 `file` (JPEG 또는 PNG)
+
+| 제한 | 값 |
+|---|---|
+| 크기 | 512KB 이하 (`PHOTO_MAX_BYTES`) |
+| 긴 변 | 800px 이하 (`PHOTO_MAX_DIMENSION`). 넘으면 원본으로 보고 거부한다 |
+
+응답 `201`
+
+```json
+{ "success": true, "data": { "url": "https://<storage>/storage/v1/object/public/thumbnails/thumbs/7/2f1c....jpg", "width": 640, "height": 480 } }
+```
+
+- 서버가 그림을 한 번 풀어 **JPEG로 다시 저장한다.** 촬영 위치(GPS) 같은 EXIF 정보는 남지 않는다
+- 저장 경로는 `thumbs/{내 사용자 ID}/{무작위}.jpg`. 이 경로의 주소만 내 기록에 붙일 수 있다
+- 주소는 추측할 수 없지만 **주소를 아는 사람은 누구나 열 수 있다** (공개 버킷). 기록을 지우면 파일도 지운다
+- 기록에 붙이지 않은 사진은 지금은 저장소에 남는다 (정리 작업은 아직 없다)
+
+에러
+
+| HTTP | code | 상황 |
+|---|---|---|
+| 400 | `PHOTO_INVALID` | 그림이 아님, 512KB 초과, 긴 변 800px 초과, 파일 없음 |
+| 503 | `PHOTO_STORAGE_UNAVAILABLE` | 사진 저장소가 설정되지 않았거나 응답하지 않음. 사진 없이 기록하도록 안내한다 |
+
+---
+
+## 7. 개발 전용 (`/api/dev`)
 
 > ⚠️ **개발·테스트 환경 전용이다. 운영에서는 켜지 않는다.** 앱(`app/`)은 이 API를 호출하지 않는다.
 > 기본으로 꺼져 있고, 꺼져 있으면 경로 자체가 없다.

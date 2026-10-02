@@ -36,10 +36,17 @@ import com.umatgong.global.security.JwtProvider;
  *
  * <p>등장인물: 지현·민기는 “동네친구들” 클럽, 남은 “다른클럽”에만 속한다.
  */
-@SpringBootTest(properties = "umatgong.plan.free.max-clubs-per-user=3")
+// 사진 저장소 주소는 접속되지 않는 곳으로 둔다. 기록에 붙는 주소의 소유 검사만 쓰고, 지울 때의 저장소 호출은 실패해도 된다
+@SpringBootTest(properties = {
+	"umatgong.plan.free.max-clubs-per-user=3",
+	"umatgong.photo.supabase-url=" + VisitFlowIntegrationTest.STORAGE,
+	"umatgong.photo.service-key=test-service-key"
+})
 @AutoConfigureMockMvc
 @EnabledIf("com.umatgong.integration.TestDatabase#enabled")
 class VisitFlowIntegrationTest {
+
+	static final String STORAGE = "http://localhost:1";
 
 	// 망원동, 망원동에서 약 300m, 성수동(망원에서 약 12km), 부산
 	private static final double[] MANGWON = {37.5563, 126.9236};
@@ -93,7 +100,8 @@ class VisitFlowIntegrationTest {
 
 	@Test
 	void 내_클럽에_기록하면_같은_클럽_멤버의_지도에_핀으로_보인다() throws Exception {
-		long visitId = record(jihyun, mangwon, friendsClub, "AGAIN", "막창 최고", "https://cdn.test/t1.jpg");
+		String thumb = thumbOf("지현", "t1.jpg");
+		long visitId = record(jihyun, mangwon, friendsClub, "AGAIN", "막창 최고", thumb);
 
 		JsonNode pins = pins(mingi, SEOUL_BOX);
 		assertThat(pins).hasSize(1);
@@ -104,7 +112,7 @@ class VisitFlowIntegrationTest {
 		assertThat(pin.at("/coordinate/lng").asDouble()).isEqualTo(MANGWON[1]);
 		assertThat(pin.get("clubColor").asText()).isEqualTo("SAGE");
 		assertThat(pin.get("rating").asText()).isEqualTo("AGAIN");
-		assertThat(pin.get("thumbnailUrl").asText()).isEqualTo("https://cdn.test/t1.jpg");
+		assertThat(pin.get("thumbnailUrl").asText()).isEqualTo(thumb);
 		// 핀은 가볍게: 메모·작성자 같은 상세는 없다
 		assertThat(pin.has("memo")).isFalse();
 		assertThat(pin.has("author")).isFalse();
@@ -142,7 +150,7 @@ class VisitFlowIntegrationTest {
 			+ "\"visitedAt\":\"2026-09-30T12:00:00Z\"}").andExpect(status().isBadRequest());
 		perform(post("/api/visits"), jihyun, visitBody(mangwon, friendsClub, "AGAIN", "가".repeat(201), null, null))
 			.andExpect(status().isBadRequest());
-		perform(post("/api/visits"), jihyun, visitBody(mangwon, friendsClub, "AGAIN", null, "http://cdn.test/a.jpg", null))
+		perform(post("/api/visits"), jihyun, visitBody(mangwon, friendsClub, "AGAIN", null, "https://evil.test/a.jpg", null))
 			.andExpect(status().isBadRequest());
 		perform(post("/api/visits"), jihyun, "{\"placeId\":" + mangwon + ",\"rating\":\"AGAIN\","
 			+ "\"visitedAt\":\"2099-01-01T00:00:00Z\"}").andExpect(status().isBadRequest());
@@ -257,7 +265,7 @@ class VisitFlowIntegrationTest {
 
 	@Test
 	void 내_기록은_평가와_메모를_고치고_지울_수_있다() throws Exception {
-		long visitId = record(jihyun, mangwon, friendsClub, "AGAIN", "원래 메모", "https://cdn.test/t.jpg");
+		long visitId = record(jihyun, mangwon, friendsClub, "AGAIN", "원래 메모", thumbOf("지현", "t.jpg"));
 
 		JsonNode updated = data(perform(patch("/api/visits/" + visitId), jihyun, "{\"rating\":\"OKAY\"}")
 			.andExpect(status().isOk()));
@@ -382,7 +390,50 @@ class VisitFlowIntegrationTest {
 		mockMvc.perform(get("/api/places/" + mangwon + "/visits")).andExpect(status().isUnauthorized());
 	}
 
+	// ── 사진 ──
+
+	@Test
+	void 내가_올린_썸네일_3장까지_올린_순서대로_붙는다() throws Exception {
+		List<String> thumbs = List.of(thumbOf("지현", "a.jpg"), thumbOf("지현", "b.jpg"), thumbOf("지현", "c.jpg"));
+		var body = objectMapper.readTree(visitBody(mangwon, friendsClub, "AGAIN", null, null, null));
+		var array = ((com.fasterxml.jackson.databind.node.ObjectNode) body).putArray("thumbnailUrls");
+		thumbs.forEach(array::add);
+
+		JsonNode created = data(perform(post("/api/visits"), jihyun, body.toString()).andExpect(status().isCreated()));
+
+		assertThat(created.get("thumbnailUrl").asText()).isEqualTo(thumbs.get(0));
+		assertThat(created.get("thumbnailUrls")).extracting(JsonNode::asText).containsExactlyElementsOf(thumbs);
+	}
+
+	@Test
+	void 남이_올린_사진이나_4장_이상은_붙일_수_없다() throws Exception {
+		// 민기가 올린 사진을 지현이 붙이려 한다
+		perform(post("/api/visits"), jihyun, visitBody(mangwon, friendsClub, "AGAIN", null, thumbOf("민기", "m.jpg"), null))
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.error.code").value("INVALID_INPUT"));
+		// 경로를 넘어가는 주소
+		perform(post("/api/visits"), jihyun,
+			visitBody(mangwon, friendsClub, "AGAIN", null, thumbOf("지현", "../2/m.jpg"), null))
+			.andExpect(status().isBadRequest());
+
+		var body = (com.fasterxml.jackson.databind.node.ObjectNode) objectMapper.readTree(
+			visitBody(mangwon, friendsClub, "AGAIN", null, null, null));
+		var array = body.putArray("thumbnailUrls");
+		for (int i = 0; i < 4; i++) {
+			array.add(thumbOf("지현", i + ".jpg"));
+		}
+		perform(post("/api/visits"), jihyun, body.toString()).andExpect(status().isBadRequest());
+
+		assertThat(jdbc.queryForObject("select count(*) from visits", Integer.class)).isZero();
+	}
+
 	// ── 도우미 ──
+
+	/** 이 사용자가 올렸을 때 저장소가 주는 썸네일 주소 */
+	private String thumbOf(String userName, String file) {
+		long userId = jdbc.queryForObject("select id from users where name = ?", Long.class, userName);
+		return STORAGE + "/storage/v1/object/public/thumbnails/thumbs/" + userId + "/" + file;
+	}
 
 	private static final String SEOUL_BOX = "?swLat=37.40&swLng=126.75&neLat=37.70&neLng=127.20";
 
@@ -405,7 +456,7 @@ class VisitFlowIntegrationTest {
 			body.put("memo", memo);
 		}
 		if (thumb != null) {
-			body.put("thumbnailUrl", thumb);
+			body.putArray("thumbnailUrls").add(thumb);
 		}
 		if (visibility != null) {
 			body.put("visibility", visibility);

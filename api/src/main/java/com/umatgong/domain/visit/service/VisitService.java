@@ -8,11 +8,14 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import com.umatgong.domain.club.entity.Club;
 import com.umatgong.domain.club.entity.ClubMemberId;
 import com.umatgong.domain.club.repository.ClubMemberRepository;
 import com.umatgong.domain.club.repository.ClubRepository;
+import com.umatgong.domain.photo.service.PhotoService;
 import com.umatgong.domain.place.entity.Place;
 import com.umatgong.domain.place.repository.PlaceRepository;
 import com.umatgong.domain.user.entity.User;
@@ -62,11 +65,18 @@ public class VisitService {
 	private final ClubMemberRepository clubMemberRepository;
 	private final UserRepository userRepository;
 	private final Clock clock;
+	private final PhotoService photoService;
 
 	@Transactional
 	public VisitResponse create(Long userId, CreateVisitRequest request) {
 		if (request.visitedAt().isAfter(clock.instant().plus(FUTURE_TOLERANCE))) {
 			throw new BusinessException(ErrorCode.INVALID_INPUT, "visitedAt이 미래입니다.");
+		}
+		// 내가 올린 썸네일만 붙인다. 남의 사진이나 바깥 주소를 내 기록에 걸지 못하게 한다
+		for (String url : request.thumbnails()) {
+			if (!photoService.isOwnedBy(userId, url)) {
+				throw new BusinessException(ErrorCode.INVALID_INPUT, "직접 올린 사진만 붙일 수 있습니다.");
+			}
 		}
 		User user = userRepository.findById(userId)
 			.orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED));
@@ -96,9 +106,8 @@ public class VisitService {
 
 		Visit visit = visitRepository.save(Visit.record(user, place, club, request.rating(),
 			blankToNull(request.memo()), request.visitedAt(), visibility));
-		if (request.thumbnailUrl() != null) {
-			visitPhotoRepository.save(VisitPhoto.attach(visit, request.thumbnailUrl(), null, null));
-		}
+		request.thumbnails().stream().distinct()
+			.forEach(url -> visitPhotoRepository.save(VisitPhoto.attach(visit, url, null, null)));
 		visitRepository.flush();
 		return visible(userId, visit.getId());
 	}
@@ -170,7 +179,15 @@ public class VisitService {
 			requireVisible(userId, visitId);
 			throw new BusinessException(ErrorCode.FORBIDDEN, "내 기록만 지울 수 있습니다.");
 		}
+		List<String> thumbs = visitPhotoRepository.findThumbUrlsByVisitId(visitId);
 		visitRepository.delete(visit);
+		// 공개 주소가 남지 않게 저장소에서도 지운다. 기록 삭제가 확정된 뒤에만, 실패해도 삭제는 되돌리지 않는다
+		TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+			@Override
+			public void afterCommit() {
+				photoService.deleteQuietly(thumbs);
+			}
+		});
 	}
 
 	private Visit requireOwn(Long userId, Long visitId) {
