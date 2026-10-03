@@ -233,6 +233,13 @@ export const Map: MapComponent = ({
         map.setLevel(LEVEL[zoom]);
         map.panTo(new maps.LatLng(center.lat, center.lng));
       },
+      panTo: (center) => {
+        const maps = mapsRef.current;
+        const map = mapRef.current;
+        if (maps && map) {
+          map.panTo(new maps.LatLng(center.lat, center.lng));
+        }
+      },
       zoomInAt: (center) => {
         const maps = mapsRef.current;
         const map = mapRef.current;

@@ -28,6 +28,9 @@ export const zIndexOf = (marker: MapMarker) => {
   if (marker.kind === 'cluster') {
     return 4;
   }
+  if (marker.selected) {
+    return 5;
+  }
   return marker.shape === 'droplet' ? 3 : marker.shape === 'circle' ? 2 : 1;
 };
 
@@ -98,7 +101,20 @@ export const markerElement = (marker: MapMarker, onPress: () => void) => {
   button.setAttribute('role', 'button');
   button.setAttribute('tabindex', '0');
   button.setAttribute('aria-label', marker.label);
-  Object.assign(button.style, { cursor: 'pointer', filter: DARK_TILES });
+  Object.assign(button.style, {
+    cursor: 'pointer',
+    filter: DARK_TILES,
+    // 선택된 핀은 크게. 물방울은 아래 끝이 좌표라 그 점을 기준으로 키운다
+    ...(marker.kind === 'pin' && marker.selected
+      ? {
+          transform: 'scale(1.45)',
+          transformOrigin: marker.shape === 'droplet' ? '50% 100%' : '50% 50%',
+        }
+      : {}),
+  });
+  if (marker.kind === 'pin' && marker.selected) {
+    button.setAttribute('aria-current', 'true');
+  }
   button.appendChild(visual);
   button.addEventListener('click', (event) => {
     event.stopPropagation();

@@ -5,6 +5,8 @@ import type { Rating } from '@/types/visit';
 import { clusterByGrid } from './cluster';
 import type { PlacePin } from './pins';
 
+const PLACE_PREFIX = 'place:';
+
 const RATING_LABEL: Record<Rating, string> = {
   AGAIN: '또 갈래',
   OKAY: '괜찮아',
@@ -19,7 +21,7 @@ const RATING_LABEL: Record<Rating, string> = {
 const pinMarker = (place: PlacePin): MapMarker => {
   const base = {
     kind: 'pin' as const,
-    id: `place:${place.placeId}`,
+    id: `${PLACE_PREFIX}${place.placeId}`,
     coordinate: place.coordinate,
     label: `${RATING_LABEL[place.rating]} 기록이 있는 장소`,
   };
@@ -53,3 +55,19 @@ export const toMapMarkers = (places: readonly PlacePin[], region: MapRegion): Ma
       label: `장소 ${entry.items.length}곳. 눌러서 확대`,
     };
   });
+
+/** 장소 핀이면 그 장소 ID. 묶음(클러스터)이면 null */
+export const placeIdOf = (marker: MapMarker): number | null =>
+  marker.kind === 'pin' && marker.id.startsWith(PLACE_PREFIX)
+    ? Number(marker.id.slice(PLACE_PREFIX.length))
+    : null;
+
+/** 미니 카드로 열린 장소의 핀을 크게 그리도록 표시한다 */
+export const markSelected = (markers: readonly MapMarker[], placeId: number | null): MapMarker[] =>
+  placeId === null
+    ? [...markers]
+    : markers.map((marker) =>
+        marker.kind === 'pin' && marker.id === `${PLACE_PREFIX}${placeId}`
+          ? { ...marker, selected: true }
+          : marker,
+      );

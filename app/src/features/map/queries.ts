@@ -1,13 +1,14 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 
 import { apiClient } from '@/lib/api';
-import type { VisitPin } from '@/types/visit';
+import type { Visit, VisitPin } from '@/types/visit';
 
 import { boundsKey, snapBounds, type Bounds } from './viewport';
 
 export const visitKeys = {
   all: ['visits'] as const,
   /** 격자에 맞춘 영역 + 클럽 필터. 같은 영역을 다시 보면 같은 키라 재요청하지 않는다 */
+  byPlace: (placeId: number) => [...visitKeys.all, 'place', placeId] as const,
   map: (bounds: Bounds, clubIds: readonly number[] | null) =>
     [...visitKeys.all, 'map', boundsKey(bounds), clubIds?.join(',') ?? 'all'] as const,
 };
@@ -47,3 +48,13 @@ export const useVisitPins = (bounds: Bounds | null, clubIds: readonly number[] |
     placeholderData: keepPreviousData,
   });
 };
+
+/** 한 장소의 기록 중 내게 보이는 것 (GET /api/places/{placeId}/visits). 미니 카드가 쓴다 */
+export const usePlaceVisits = (placeId: number | null) =>
+  useQuery({
+    queryKey: placeId === null ? [...visitKeys.all, 'place', 'none'] : visitKeys.byPlace(placeId),
+    queryFn: () => apiClient.get<Visit[]>(`/api/places/${placeId}/visits`),
+    enabled: placeId !== null,
+    // 좌우로 넘겼다 돌아와도 다시 받지 않는다
+    staleTime: 60_000,
+  });
