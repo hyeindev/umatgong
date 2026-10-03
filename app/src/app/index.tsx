@@ -9,13 +9,21 @@ import { useMyClubs } from '@/features/club';
 import {
   EmptyStateSheet,
   MapFilterChips,
+  MiniCard,
   SOUTH_KOREA_BOUNDS,
   SOUTH_KOREA_VIEW,
+  markSelected,
+  neighborOrder,
+  placeIdOf,
+  summarizePlace,
   toMapMarkers,
   toPlacePins,
   useDebouncedValue,
+  usePlaceVisits,
   useVisitPins,
+  type PlacePin,
 } from '@/features/map';
+import { distanceMeters, formatDistance } from '@/lib/geo';
 import { pendingInvite } from '@/lib/invite';
 import { location } from '@/lib/location';
 import { Map, type MapHandle, type MapMarker, type MapRegion } from '@/lib/map';
@@ -29,7 +37,8 @@ const FETCH_DEBOUNCE_MS = 300;
 // 지도 홈. 앱을 켜면 바로 여기다 (화면기획서 1장 “지도가 곧 홈이다”).
 // 첫 진입은 남한 전체에서 시작하고, 확대하면 동네로 들어간다 (화면기획서 4.1, ref-main.html M1).
 //
-// TODO: 핀을 누르면 미니 카드(4.2), 「내 근처 맛집」(4.3). 「내 근처 맛집」이 생기면 「기록하기」는 그 위의 보조 버튼이 된다.
+// 핀을 누르면 미니 카드(4.2)가 지도 위에 뜬다. 화면 전환이 아니다. 지도 빈 곳을 누르면 닫힌다.
+// TODO: 「내 근처 맛집」(4.3). 생기면 「기록하기」는 그 위의 보조 버튼이 된다. 장소 상세(4.4)는 다음 단계.
 // TODO: 전국·광역 단계의 지역명 클러스터는 서버 지역 집계 API가 생기면 바꾼다. 지금은 화면 격자로 묶는다.
 export default function MapHomeScreen() {
   const router = useRouter();
@@ -96,12 +105,68 @@ export default function MapHomeScreen() {
   const nationwide = useVisitPins(SOUTH_KOREA_BOUNDS, null);
   const isEmpty = nationwide.isSuccess && nationwide.data.length === 0;
 
+  const placePins = useMemo(
+    () => (pins.data ? toPlacePins(pins.data, { showNope }) : []),
+    [pins.data, showNope],
+  );
+
+  // 미니 카드. 연 순간 좌우로 넘길 순서(누른 핀에서 가까운 순)를 정해 두고 넘기는 동안 바꾸지 않는다
+  const [card, setCard] = useState<{ pins: PlacePin[]; index: number } | null>(null);
+  const cardPin = card ? (card.pins[card.index] ?? null) : null;
+  const placeVisits = usePlaceVisits(cardPin?.placeId ?? null);
+  const summary = useMemo(
+    () => (placeVisits.data ? summarizePlace(placeVisits.data) : null),
+    [placeVisits.data],
+  );
+  const [detailNotice, setDetailNotice] = useState(false);
+
   const markers = useMemo(() => {
-    if (!region || !pins.data) {
+    if (!region) {
       return [];
     }
-    return toMapMarkers(toPlacePins(pins.data, { showNope }), region);
-  }, [region, pins.data, showNope]);
+    return markSelected(toMapMarkers(placePins, region), cardPin?.placeId ?? null);
+  }, [region, placePins, cardPin]);
+
+  const openCard = (placeId: number) => {
+    const order = neighborOrder(placePins, placeId, distanceMeters);
+    const byId = new globalThis.Map(placePins.map((pin) => [pin.placeId, pin]));
+    const ordered = order.flatMap((id) => {
+      const pin = byId.get(id);
+      return pin ? [pin] : [];
+    });
+    if (ordered.length === 0) {
+      return;
+    }
+    setCard({ pins: ordered, index: 0 });
+    mapRef.current?.panTo(ordered[0]!.coordinate);
+    // 거리를 보여 주려고 위치를 읽되, 권한은 묻지 않는다 (이미 허용했을 때만)
+    if (!myLocation) {
+      location.peek().then((coordinate) => coordinate && setMyLocation(coordinate));
+    }
+  };
+
+  const moveCard = (step: number) => {
+    if (!card) {
+      return;
+    }
+    const index = Math.min(card.pins.length - 1, Math.max(0, card.index + step));
+    const pin = card.pins[index];
+    if (index === card.index || !pin) {
+      return;
+    }
+    setCard({ ...card, index });
+    // 카드를 넘기면 지도도 그 핀으로 따라간다
+    mapRef.current?.panTo(pin.coordinate);
+  };
+
+  // 장소 상세(4.4)는 다음 단계. 지금은 곧 열린다는 안내만 잠깐 띄운다
+  const openDetail = () => {
+    setDetailNotice(true);
+    setTimeout(() => setDetailNotice(false), 2500);
+  };
+
+  const cardDistance =
+    myLocation && summary ? formatDistance(distanceMeters(myLocation, summary.coordinate)) : null;
 
   const toggleClub = (clubId: number) => {
     setPickedClubIds((previous) => {
@@ -118,11 +183,19 @@ export default function MapHomeScreen() {
     });
   };
 
-  const onMarkerPress = useCallback((marker: MapMarker) => {
+  const onMarkerPress = (marker: MapMarker) => {
     if (marker.kind === 'cluster') {
       mapRef.current?.zoomInAt(marker.coordinate);
+      return;
     }
-  }, []);
+    const placeId = placeIdOf(marker);
+    if (placeId !== null) {
+      openCard(placeId);
+    }
+  };
+
+  // 지도 빈 곳을 누르면 카드를 닫는다
+  const onMapPress = useCallback(() => setCard(null), []);
 
   const goToMyLocation = async () => {
     setLocating(true);
@@ -144,6 +217,7 @@ export default function MapHomeScreen() {
   const notice =
     message ??
     recordedNotice ??
+    (detailNotice ? '장소 상세는 곧 열려요.' : null) ??
     (pins.isError ? '기록을 불러오지 못했어요. 지도를 움직이면 다시 시도해요.' : null);
 
   return (
@@ -155,6 +229,7 @@ export default function MapHomeScreen() {
         myLocation={myLocation}
         markers={markers}
         onMarkerPress={onMarkerPress}
+        onPress={onMapPress}
         onRegionChange={setRegion}
         onError={setMessage}
         style={StyleSheet.absoluteFill}
@@ -226,7 +301,21 @@ export default function MapHomeScreen() {
             />
           </Svg>
         </Pressable>
-        {isEmpty ? (
+        {card ? (
+          <View style={styles.card}>
+            <MiniCard
+              summary={summary}
+              loading={placeVisits.isPending}
+              error={placeVisits.isError ? '기록을 불러오지 못했어요.' : null}
+              distance={cardDistance}
+              index={card.index}
+              count={card.pins.length}
+              onPrev={() => moveCard(-1)}
+              onNext={() => moveCard(1)}
+              onDetail={openDetail}
+            />
+          </View>
+        ) : isEmpty ? (
           <EmptyStateSheet onRecord={() => router.push('/record')} />
         ) : (
           <Pressable
@@ -301,6 +390,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface.sheet,
     borderWidth: 1,
     borderColor: colors.border.subtle,
+  },
+  card: {
+    paddingHorizontal: layout.screenGutter,
   },
   // 화면의 주요 행동 하나라 라임 (한 화면에 라임 면 2개까지)
   record: {

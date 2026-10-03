@@ -8,5 +8,8 @@ export type LocationResult =
   | { status: 'unavailable' };
 
 export type LocationProvider = {
+  /** 지금 위치. 권한이 없으면 묻는다 (사용자가 버튼을 눌렀을 때만 부른다) */
   getCurrent: () => Promise<LocationResult>;
+  /** 이미 권한이 있을 때만 지금 위치. 권한을 묻지 않는다. 없거나 모르면 null (거리 표시 같은 곁다리용) */
+  peek: () => Promise<Coordinate | null>;
 };

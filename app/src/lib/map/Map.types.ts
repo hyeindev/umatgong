@@ -41,6 +41,8 @@ export type MapMarker =
       color: string;
       /** 스크린 리더용 이름 */
       label: string;
+      /** 미니 카드로 열려 있는 핀. 크게 그린다 */
+      selected?: boolean;
     }
   | {
       kind: 'cluster';
@@ -55,6 +57,8 @@ export type MapMarker =
 export type MapHandle = {
   /** 지도가 아직 준비되지 않았으면 준비된 뒤 옮긴다 */
   moveTo: (center: Coordinate, zoom: MapZoom) => void;
+  /** 확대 정도는 그대로 두고 그 좌표로 부드럽게 옮긴다 */
+  panTo: (center: Coordinate) => void;
   /** 한 단계 이상 확대하며 그 좌표로 옮긴다 (클러스터를 눌렀을 때) */
   zoomInAt: (center: Coordinate) => void;
 };
