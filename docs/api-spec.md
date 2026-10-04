@@ -795,7 +795,46 @@ GET /api/visits/map?swLat=37.40&swLng=126.75&neLat=37.70&neLng=127.20
 
 ---
 
-## 6. 사진 (`/api/photos`)
+## 6. 스크랩 (가고 싶은 곳)
+
+기획서 E-08. 장소 상세의 「가고싶다」. **나만 보는 목록**이다. 클럽과 나누지 않는다.
+
+- 카카오 장소는 누구나 스크랩할 수 있다
+- 클럽 전용 장소(`clubId`가 있는 장소)는 그 클럽의 **지금 멤버**만 다룰 수 있다. 아니면 없는 장소와 같은 `404 PLACE_NOT_FOUND`
+- 클럽을 나가면 그 클럽 전용 장소의 스크랩은 목록·상태에서 빠진다 (지우지는 않는다. 다시 들어오면 보인다)
+
+### GET /api/places/{placeId}/scrap — 스크랩했는지
+
+응답 `200`: `{ "success": true, "data": { "placeId": 12, "scrapped": true } }`
+
+### PUT /api/places/{placeId}/scrap — 스크랩하기
+
+여러 번 불러도 결과가 같다 (이미 스크랩했으면 그대로). 응답 `200`: `{ "placeId": 12, "scrapped": true }`
+
+### DELETE /api/places/{placeId}/scrap — 스크랩 풀기
+
+스크랩하지 않은 장소여도 성공한다. 응답 `200`: `{ "placeId": 12, "scrapped": false }`
+
+에러 (세 API 공통): `404 PLACE_NOT_FOUND` (없는 장소, 또는 다른 클럽의 전용 장소)
+
+### GET /api/scraps — 내 스크랩 목록
+
+최근 스크랩순, 최대 200개.
+
+```json
+{
+  "success": true,
+  "data": [
+    { "place": { "id": 12, "name": "망원동 김반장", "address": "...", "category": "곱창,막창",
+                 "coordinate": { "lat": 37.5563, "lng": 126.9236 }, "distanceMeters": null, "clubId": null },
+      "scrappedAt": "2026-10-04T09:00:00Z" }
+  ]
+}
+```
+
+---
+
+## 7. 사진 (`/api/photos`)
 
 ### POST /api/photos/thumbnails — 썸네일 올리기
 
@@ -829,7 +868,7 @@ GET /api/visits/map?swLat=37.40&swLng=126.75&neLat=37.70&neLng=127.20
 
 ---
 
-## 7. 개발 전용 (`/api/dev`)
+## 8. 개발 전용 (`/api/dev`)
 
 > ⚠️ **개발·테스트 환경 전용이다. 운영에서는 켜지 않는다.** 앱(`app/`)은 이 API를 호출하지 않는다.
 > 기본으로 꺼져 있고, 꺼져 있으면 경로 자체가 없다.
