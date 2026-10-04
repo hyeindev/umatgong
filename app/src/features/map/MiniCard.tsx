@@ -30,7 +30,7 @@ type Props = {
   count: number;
   onPrev: () => void;
   onNext: () => void;
-  /** 위로 끌어 올림 / 「자세히 보기」 — 장소 상세 (다음 단계) */
+  /** 위로 끌어 올림 / 「자세히 보기」 — 장소 상세 */
   onDetail: () => void;
 };
 

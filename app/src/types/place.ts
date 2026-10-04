@@ -23,3 +23,6 @@ export type CreateCustomPlaceRequest = {
   address?: string | null;
   coordinate: Coordinate;
 };
+
+/** GET·PUT·DELETE /api/places/{placeId}/scrap */
+export type ScrapStatus = { placeId: number; scrapped: boolean };
