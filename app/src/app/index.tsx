@@ -38,7 +38,7 @@ const FETCH_DEBOUNCE_MS = 300;
 // 첫 진입은 남한 전체에서 시작하고, 확대하면 동네로 들어간다 (화면기획서 4.1, ref-main.html M1).
 //
 // 핀을 누르면 미니 카드(4.2)가 지도 위에 뜬다. 화면 전환이 아니다. 지도 빈 곳을 누르면 닫힌다.
-// TODO: 「내 근처 맛집」(4.3). 생기면 「기록하기」는 그 위의 보조 버튼이 된다. 장소 상세(4.4)는 다음 단계.
+// TODO: 「내 근처 맛집」(4.3). 생기면 「기록하기」는 그 위의 보조 버튼이 된다.
 // TODO: 전국·광역 단계의 지역명 클러스터는 서버 지역 집계 API가 생기면 바꾼다. 지금은 화면 격자로 묶는다.
 export default function MapHomeScreen() {
   const router = useRouter();
@@ -118,7 +118,6 @@ export default function MapHomeScreen() {
     () => (placeVisits.data ? summarizePlace(placeVisits.data) : null),
     [placeVisits.data],
   );
-  const [detailNotice, setDetailNotice] = useState(false);
 
   const markers = useMemo(() => {
     if (!region) {
@@ -159,10 +158,11 @@ export default function MapHomeScreen() {
     mapRef.current?.panTo(pin.coordinate);
   };
 
-  // 장소 상세(4.4)는 다음 단계. 지금은 곧 열린다는 안내만 잠깐 띄운다
+  // 위로 끌거나 「자세히 보기」 → 장소 상세 (화면기획서 4.4)
   const openDetail = () => {
-    setDetailNotice(true);
-    setTimeout(() => setDetailNotice(false), 2500);
+    if (cardPin) {
+      router.push(`/places/${cardPin.placeId}`);
+    }
   };
 
   const cardDistance =
@@ -217,7 +217,6 @@ export default function MapHomeScreen() {
   const notice =
     message ??
     recordedNotice ??
-    (detailNotice ? '장소 상세는 곧 열려요.' : null) ??
     (pins.isError ? '기록을 불러오지 못했어요. 지도를 움직이면 다시 시도해요.' : null);
 
   return (

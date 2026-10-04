@@ -56,6 +56,7 @@ export default function RootLayout() {
           <Stack.Screen name="clubs/new" />
           <Stack.Screen name="clubs/[clubId]" />
           <Stack.Screen name="record" />
+          <Stack.Screen name="places/[placeId]" />
         </Stack.Protected>
         {/* 카카오 콜백과 초대 링크는 로그인 전에 열리므로 막지 않는다 */}
         <Stack.Screen name="auth/kakao/callback" />
